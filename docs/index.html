@@ -4,74 +4,170 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Valorant Pazarım</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpolygon points='16,1 31,16 16,31 1,16' fill='%23ff4655'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #0f1923; --panel: #1a2733; --panel2: #223343; --line: #2c3f52;
-    --text: #ece8e1; --muted: #8b97a3; --accent: #ff4655; --ok: #3ddc97;
+    --text: #ece8e1; --muted: #8b97a3; --accent: #ff4655; --accent2: #4ce0ff; --ok: #3ddc97;
+    --disp: "Rajdhani", system-ui, sans-serif;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  header { padding: 18px 16px 0; max-width: 1100px; margin: 0 auto; }
-  h1 { margin: 0; font-size: 22px; letter-spacing: .5px; }
+  ::selection { background: var(--accent); color: #fff; }
+  ::-webkit-scrollbar { height: 8px; width: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+
+  header { position: relative; padding: 22px 16px 14px; max-width: 1100px; margin: 0 auto; border-bottom: 1px solid var(--line); }
+  header::before {
+    content: ""; position: absolute; top: -60px; left: 16px; width: 260px; height: 180px;
+    background: radial-gradient(closest-side, rgba(255,70,85,.16), transparent 70%); pointer-events: none;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .mark {
+    width: 24px; height: 24px; flex: 0 0 auto;
+    background: linear-gradient(135deg, var(--accent), #ff8a94);
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+    box-shadow: 0 0 18px rgba(255,70,85,.55);
+  }
+  h1 { margin: 0; font: 700 24px/1 var(--disp); letter-spacing: 1px; }
   h1 span { color: var(--accent); }
-  .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
-  nav { display: flex; gap: 4px; margin-top: 14px; border-bottom: 1px solid var(--line); overflow-x: auto; }
-  nav button { background: none; border: 0; color: var(--muted); padding: 10px 14px; font: inherit; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
-  nav button.on { color: var(--text); border-bottom-color: var(--accent); }
-  main { max-width: 1100px; margin: 0 auto; padding: 16px; }
-  h2 { font-size: 15px; margin: 22px 0 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .8px; }
+  .sub { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  nav { display: flex; gap: 6px; margin-top: 16px; overflow-x: auto; scrollbar-width: none; }
+  nav::-webkit-scrollbar { display: none; }
+  nav button {
+    display: flex; align-items: center; gap: 6px; background: transparent; border: 1px solid transparent;
+    color: var(--muted); padding: 8px 15px; border-radius: 999px; font: 600 14.5px/1 var(--disp);
+    letter-spacing: .3px; cursor: pointer; white-space: nowrap; transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+  }
+  nav button .ic { font-size: 13px; opacity: .9; }
+  nav button:hover { color: var(--text); background: var(--panel); }
+  nav button.on { color: #fff; background: var(--accent); box-shadow: 0 3px 14px rgba(255,70,85,.4); }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 18px 16px 40px; }
+  h2 { font: 600 13.5px/1 var(--disp); margin: 24px 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.2px; display: flex; align-items: center; gap: 8px; }
   h2:first-child { margin-top: 0; }
+  h2::before { content: ""; width: 3px; height: 13px; background: var(--accent); border-radius: 2px; }
+
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
   .grid.small { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; position: relative; display: flex; flex-direction: column; }
-  .card .img { height: 110px; display: grid; place-items: center; background: linear-gradient(135deg, var(--panel2), var(--panel)); border-bottom: 3px solid var(--tier, var(--line)); }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+    position: relative; display: flex; flex-direction: column;
+    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+  }
+  .card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--tier, var(--line)) 60%, var(--line)); box-shadow: 0 10px 24px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.02); }
+  .card .img {
+    height: 110px; display: grid; place-items: center; position: relative;
+    background: radial-gradient(circle at 30% 20%, var(--panel2), var(--bg) 120%);
+    border-bottom: 2px solid var(--tier, var(--line));
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);
+  }
   .small .card .img { height: 78px; }
-  .card img { max-width: 92%; max-height: 92%; object-fit: contain; }
+  .card img { max-width: 92%; max-height: 92%; object-fit: contain; filter: drop-shadow(0 4px 10px rgba(0,0,0,.5)); }
   .card .body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 2px; flex: 1; }
   .name { font-weight: 600; }
   .meta { color: var(--muted); font-size: 12.5px; }
-  .price { margin-top: auto; padding-top: 6px; font-weight: 600; color: var(--ok); }
-  .price s { color: var(--muted); font-weight: 400; margin-right: 6px; }
-  .tier { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; background: var(--tier, var(--muted)); }
-  .star { position: absolute; top: 6px; right: 6px; background: rgba(15,25,35,.75); border: 0; color: var(--muted); border-radius: 50%; width: 32px; height: 32px; font-size: 18px; cursor: pointer; line-height: 1; }
+  .price { margin-top: auto; padding-top: 6px; font: 700 15px/1 var(--disp); color: var(--ok); letter-spacing: .3px; }
+  .price s { color: var(--muted); font-weight: 400; font-family: system-ui, sans-serif; font-size: 13px; margin-right: 6px; }
+  .tier { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; background: var(--tier, var(--muted)); box-shadow: 0 0 6px var(--tier, transparent); }
+  .star {
+    position: absolute; top: 6px; right: 6px; z-index: 1; background: rgba(10,17,24,.7); backdrop-filter: blur(2px);
+    border: 1px solid rgba(255,255,255,.08); color: var(--muted); border-radius: 50%; width: 30px; height: 30px;
+    font-size: 16px; cursor: pointer; line-height: 1; transition: transform .12s ease, color .12s ease;
+  }
+  .star:hover { transform: scale(1.12); }
   .star.on { color: #ffd23f; }
-  .hit { outline: 2px solid #ffd23f; }
-  .banner { background: #3b2f10; border: 1px solid #ffd23f; color: #ffe08a; padding: 10px 14px; border-radius: 10px; margin-bottom: 14px; }
-  .bundle { display: flex; gap: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; flex-wrap: wrap; }
-  .bundle img { width: 120px; height: 170px; object-fit: cover; border-radius: 8px; }
+  .hit { outline: 2px solid #ffd23f; box-shadow: 0 0 0 4px rgba(255,210,63,.15); }
+
+  .banner {
+    display: flex; align-items: center; gap: 10px; background: linear-gradient(90deg, rgba(255,210,63,.14), rgba(255,210,63,.04));
+    border: 1px solid rgba(255,210,63,.5); color: #ffe08a; padding: 12px 14px; border-radius: 10px; margin-bottom: 16px;
+  }
+  .banner b { color: #fff; }
+
+  .bundle {
+    display: flex; gap: 16px; background: linear-gradient(135deg, var(--panel), var(--panel2)); border: 1px solid var(--line);
+    border-radius: 12px; padding: 14px; flex-wrap: wrap; transition: border-color .16s ease;
+  }
+  .bundle:hover { border-color: var(--accent); }
+  .bundle img { width: 120px; height: 170px; object-fit: cover; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,.4); }
   .bundle ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); }
-  .timer { color: var(--accent); font-variant-numeric: tabular-nums; font-weight: 600; }
-  .day { margin-bottom: 20px; }
-  .day h3 { margin: 0 0 8px; font-size: 14px; }
+  .bundle .name { font: 700 16px/1.2 var(--disp); letter-spacing: .3px; }
+
+  .timer { color: var(--accent2); font: 700 14px/1 var(--disp); letter-spacing: .5px; font-variant-numeric: tabular-nums; }
+
+  .day { margin-bottom: 22px; }
+  .day h3 { margin: 0 0 8px; font: 600 14.5px/1 var(--disp); color: var(--text); letter-spacing: .3px; }
+
   .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-  input, select { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; font: inherit; }
+  input, select {
+    background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px;
+    padding: 9px 12px; font: inherit; transition: border-color .12s ease;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--accent); }
   input[type=search] { flex: 1; min-width: 180px; }
-  button.btn { background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 9px 16px; font: inherit; font-weight: 600; cursor: pointer; }
-  button.btn.ghost { background: var(--panel2); }
-  button.btn:disabled { opacity: .5; cursor: default; }
-  .empty { color: var(--muted); padding: 30px 0; text-align: center; }
+
+  button.btn {
+    background: var(--accent); color: #fff; border: 0; padding: 9px 18px; font: 600 14.5px/1 var(--disp);
+    letter-spacing: .3px; cursor: pointer; clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+    transition: filter .12s ease, transform .1s ease;
+  }
+  button.btn:hover { filter: brightness(1.1); }
+  button.btn:active { transform: scale(.97); }
+  button.btn.ghost { background: var(--panel2); color: var(--text); }
+  button.btn:disabled { opacity: .5; cursor: default; filter: none; }
+
+  .empty { color: var(--muted); padding: 40px 0; text-align: center; font-size: 14px; }
   .box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-top: 18px; }
   .box label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
   .box input { width: 100%; }
   .row { display: flex; gap: 8px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
   .note { color: var(--muted); font-size: 12.5px; }
-  #toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--panel2); border: 1px solid var(--line); padding: 10px 16px; border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 5; }
-  #toast.show { opacity: 1; }
+
+  #toast {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%) translateY(6px); background: var(--panel2);
+    border: 1px solid var(--line); padding: 10px 16px; border-radius: 8px; opacity: 0; transition: opacity .2s ease, transform .2s ease;
+    pointer-events: none; z-index: 5; box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .sk-card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .sk-card .img { height: 110px; }
+  .sk-card .img, .sk-line {
+    background: linear-gradient(90deg, var(--panel) 25%, var(--panel2) 37%, var(--panel) 63%);
+    background-size: 400% 100%; animation: shimmer 1.4s ease infinite;
+  }
+  .sk-card .body { padding: 12px; }
+  .sk-line { height: 10px; border-radius: 4px; margin: 8px 0; }
+  .sk-line.w60 { width: 60%; }
+  .sk-line.w40 { width: 40%; }
+  @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
 </style>
 </head>
 <body>
 <header>
-  <h1>VALORANT <span>PAZARIM</span></h1>
+  <div class="brand"><span class="mark"></span><h1>VALORANT <span>PAZARIM</span></h1></div>
   <div class="sub" id="sub">Yükleniyor…</div>
   <nav id="nav"></nav>
 </header>
-<main id="main"></main>
+<main id="main">
+  <div class="grid">
+    <div class="sk-card"><div class="img"></div><div class="body"><div class="sk-line w60"></div><div class="sk-line w40"></div></div></div>
+    <div class="sk-card"><div class="img"></div><div class="body"><div class="sk-line w60"></div><div class="sk-line w40"></div></div></div>
+    <div class="sk-card"><div class="img"></div><div class="body"><div class="sk-line w60"></div><div class="sk-line w40"></div></div></div>
+    <div class="sk-card"><div class="img"></div><div class="body"><div class="sk-line w60"></div><div class="sk-line w40"></div></div></div>
+  </div>
+</main>
 <div id="toast"></div>
 
 <script>
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const TABS = [["today", "Bugün"], ["history", "Geçmiş"], ["skins", "Tüm skinler"], ["wish", "Bekleme listesi"]];
+const TABS = [["today", "🛒", "Bugün"], ["history", "📜", "Geçmiş"], ["skins", "🗡️", "Tüm skinler"], ["wish", "⭐", "Bekleme listesi"]];
 const MONTHS = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
 
 let catalog, history = [], wishSaved = [], wish = new Set(), byAny = new Map();
@@ -99,8 +195,8 @@ async function init() {
   wish = new Set(wishSaved);
   for (const s of catalog.skins) { byAny.set(s.id, s); s.levels.forEach((l) => byAny.set(l, s)); }
   $("#sub").textContent = `${catalog.skins.length} skin · oyun sürümü ${catalog.game_version.replace("release-", "").split("-")[0]} · ${history.length} günlük geçmiş`;
-  $("#nav").innerHTML = TABS.map(([k, n]) => `<button data-t="${k}">${n}</button>`).join("");
-  $("#nav").onclick = (e) => { const t = e.target.dataset.t; if (t) go(t); };
+  $("#nav").innerHTML = TABS.map(([k, ic, n]) => `<button data-t="${k}"><span class="ic">${ic}</span>${n}</button>`).join("");
+  $("#nav").onclick = (e) => { const t = e.target.closest("button")?.dataset.t; if (t) go(t); };
   go("today");
   setInterval(tick, 1000);
 }

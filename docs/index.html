@@ -108,7 +108,16 @@
   .day { margin-bottom: 22px; }
   .day h3 { margin: 0 0 8px; font: 600 14.5px/1 var(--disp); color: var(--text); letter-spacing: .3px; }
 
-  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .chipgroup { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 10px; }
+  .chiplabel { color: var(--muted); font: 600 11.5px/1 var(--disp); text-transform: uppercase; letter-spacing: .6px; margin-right: 2px; flex: 0 0 auto; }
+  .chip {
+    background: var(--panel); border: 1px solid var(--line); color: var(--muted); font: 500 13px/1 system-ui, sans-serif;
+    padding: 6px 13px; border-radius: 999px; cursor: pointer; transition: background .12s ease, border-color .12s ease, color .12s ease;
+  }
+  .chip:hover { border-color: var(--muted); color: var(--text); }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .clearf { background: none; border: 0; color: var(--accent2); font-size: 12.5px; cursor: pointer; text-decoration: underline; margin-left: auto; }
   input, select {
     background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px;
     padding: 9px 12px; font: inherit; transition: border-color .12s ease;
@@ -177,7 +186,7 @@ const TABS = [["today", "🛒", "Bugün"], ["history", "📜", "Geçmiş"], ["sk
 const MONTHS = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
 
 let catalog, history = [], wishSaved = [], wish = new Set(), byAny = new Map(), appear = new Map();
-let tab = "today", shown = 60, filters = { q: "", weapon: "", tier: "", onlyWish: false };
+let tab = "today", shown = 60, filters = { q: "", weapons: new Set(), tiers: new Set(), onlyWish: false };
 const ls = {
   get(k, d = "") { try { return localStorage.getItem(k) ?? d; } catch { return d; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch {} },
@@ -305,13 +314,16 @@ function skinsView() {
   const qBi = q ? { en: q.toLowerCase(), tr: trLower(q) } : null;
   const list = catalog.skins.filter((s) =>
     (!qBi || matches(s.name, qBi) || matches(s.weapon, qBi) || matches(s.theme, qBi)) &&
-    (!filters.weapon || s.weapon.en === filters.weapon) && (!filters.tier || s.tier === filters.tier) &&
+    (!filters.weapons.size || filters.weapons.has(s.weapon.en)) && (!filters.tiers.size || filters.tiers.has(s.tier)) &&
     (!filters.onlyWish || wish.has(s.id)));
+  const anyFilter = filters.weapons.size || filters.tiers.size || filters.onlyWish;
+  const chip = (on, attr, key, label) => `<button class="chip ${on ? "on" : ""}" data-${attr}="${esc(key)}">${esc(label)}</button>`;
   return `<div class="filters">
     <input type="search" id="q" placeholder="Skin veya koleksiyon ara… (EN/TR)" value="${esc(filters.q)}">
-    <select id="fw"><option value="">Tüm silahlar</option>${weapons.map(([key, w]) => `<option value="${esc(key)}" ${key === filters.weapon ? "selected" : ""}>${esc(nm(w))}</option>`).join("")}</select>
-    <select id="ft"><option value="">Tüm seviyeler</option>${tiers.map(([id, t]) => `<option value="${id}" ${id === filters.tier ? "selected" : ""}>${esc(nm(t.name).replace(" Edition", ""))}</option>`).join("")}</select>
-    <label class="note" style="align-self:center"><input type="checkbox" id="fo" ${filters.onlyWish ? "checked" : ""}> sadece ⭐</label></div>
+    <label class="note" style="align-self:center"><input type="checkbox" id="fo" ${filters.onlyWish ? "checked" : ""}> sadece ⭐</label>
+    ${anyFilter ? `<button class="clearf" id="clearf">Filtreleri temizle</button>` : ""}</div>
+    <div class="chipgroup"><span class="chiplabel">Silah</span>${weapons.map(([key, w]) => chip(filters.weapons.has(key), "wf", key, nm(w))).join("")}</div>
+    <div class="chipgroup"><span class="chiplabel">Seviye</span>${tiers.map(([id, t]) => chip(filters.tiers.has(id), "tf", id, nm(t.name).replace(" Edition", ""))).join("")}</div>
     <div class="note" style="margin-bottom:10px">${list.length} skin</div>
     <div class="grid small">${list.slice(0, shown).map((s) => card(s, { extra: seenInfo(s.id) })).join("")}</div>
     ${list.length > shown ? `<div class="row" style="justify-content:center"><button class="btn ghost" id="more">Daha fazla göster</button></div>` : ""}`;
@@ -386,7 +398,14 @@ document.addEventListener("click", (e) => {
   if (t.dataset.star) {
     wish.has(t.dataset.star) ? wish.delete(t.dataset.star) : wish.add(t.dataset.star);
     const y = scrollY; render(); scrollTo(0, y);
-  } else if (t.id === "more") { shown += 60; render(); }
+  } else if (t.dataset.wf) {
+    filters.weapons.has(t.dataset.wf) ? filters.weapons.delete(t.dataset.wf) : filters.weapons.add(t.dataset.wf);
+    shown = 60; render();
+  } else if (t.dataset.tf) {
+    filters.tiers.has(t.dataset.tf) ? filters.tiers.delete(t.dataset.tf) : filters.tiers.add(t.dataset.tf);
+    shown = 60; render();
+  } else if (t.id === "clearf") { filters.weapons.clear(); filters.tiers.clear(); filters.onlyWish = false; shown = 60; render(); }
+  else if (t.id === "more") { shown += 60; render(); }
   else if (t.id === "save") saveWishlist();
   else if (t.id === "saveset") { if ($("#repo")) ls.set("repo", $("#repo").value.trim()); ls.set("token", $("#token").value.trim()); toast("Ayar saklandı"); }
 });
@@ -394,9 +413,7 @@ document.addEventListener("input", (e) => {
   if (e.target.id === "q") { filters.q = e.target.value; shown = 60; const p = e.target.selectionStart; render(); const q = $("#q"); q.focus(); q.setSelectionRange(p, p); }
 });
 document.addEventListener("change", (e) => {
-  const m = { fw: "weapon", ft: "tier" }[e.target.id];
-  if (m) { filters[m] = e.target.value; shown = 60; render(); }
-  else if (e.target.id === "fo") { filters.onlyWish = e.target.checked; shown = 60; render(); }
+  if (e.target.id === "fo") { filters.onlyWish = e.target.checked; shown = 60; render(); }
 });
 
 init();

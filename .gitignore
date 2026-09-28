@@ -3,3 +3,4 @@ __pycache__/
 .env
 config.env
 pazar-log.txt
+.git-credentials

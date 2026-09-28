@@ -45,6 +45,9 @@
   nav button .ic { font-size: 13px; opacity: .9; }
   nav button:hover { color: var(--text); background: var(--panel); }
   nav button.on { color: #fff; background: var(--accent); box-shadow: 0 3px 14px rgba(255,70,85,.4); }
+  .langsw { display: inline-flex; margin-top: 6px; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .langsw button { background: transparent; border: 0; color: var(--muted); font: 600 12px/1 var(--disp); padding: 5px 12px; cursor: pointer; letter-spacing: .5px; }
+  .langsw button.on { background: var(--panel2); color: var(--text); }
 
   main { max-width: 1100px; margin: 0 auto; padding: 18px 16px 40px; }
   h2 { font: 600 13.5px/1 var(--disp); margin: 24px 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.2px; display: flex; align-items: center; gap: 8px; }
@@ -154,6 +157,7 @@
 <header>
   <div class="brand"><span class="mark"></span><h1>VALORANT <span>PAZARIM</span></h1></div>
   <div class="sub" id="sub">Yükleniyor…</div>
+  <div class="langsw" id="langsw"><button data-lang="tr">TR isimler</button><button data-lang="en">EN isimler</button></div>
   <nav id="nav"></nav>
 </header>
 <main id="main">
@@ -178,6 +182,13 @@ const ls = {
   get(k, d = "") { try { return localStorage.getItem(k) ?? d; } catch { return d; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch {} },
 };
+let lang = ls.get("lang", "tr") === "en" ? "en" : "tr";
+const nm = (x) => (x && (x[lang] || x.en)) ?? "";
+const trLower = (s) => s.replace(/İ/g, "i").replace(/I/g, "ı").toLocaleLowerCase("tr-TR");
+function matches(bi, q) {  // bi: {en,tr} alan; q: {en,tr} önceden küçültülmüş arama metni
+  if (!bi) return false;
+  return (q.en && bi.en.toLowerCase().includes(q.en)) || (q.tr && trLower(bi.tr).includes(q.tr));
+}
 
 async function getJSON(path, fallback) {
   try {
@@ -204,6 +215,14 @@ async function init() {
   $("#sub").textContent = `${catalog.skins.length} skin · oyun sürümü ${catalog.game_version.replace("release-", "").split("-")[0]} · ${history.length} günlük geçmiş`;
   $("#nav").innerHTML = TABS.map(([k, ic, n]) => `<button data-t="${k}"><span class="ic">${ic}</span>${n}</button>`).join("");
   $("#nav").onclick = (e) => { const t = e.target.closest("button")?.dataset.t; if (t) go(t); };
+  document.querySelectorAll("#langsw button").forEach((b) => b.classList.toggle("on", b.dataset.lang === lang));
+  $("#langsw").onclick = (e) => {
+    const l = e.target.closest("button")?.dataset.lang;
+    if (!l || l === lang) return;
+    lang = l; ls.set("lang", l);
+    document.querySelectorAll("#langsw button").forEach((b) => b.classList.toggle("on", b.dataset.lang === lang));
+    render();
+  };
   go("today");
   setInterval(tick, 1000);
 }
@@ -240,8 +259,8 @@ function card(s, { price, old, extra = "" } = {}, offerId) {
     <button class="star ${wish.has(s.id) ? "on" : ""}" data-star="${s.id}" title="Bekleme listesi">${wish.has(s.id) ? "★" : "☆"}</button>
     <div class="img">${s.icon ? `<img loading="lazy" src="${esc(s.icon)}" alt="">` : ""}</div>
     <div class="body">
-      <div class="name">${esc(s.name)}</div>
-      <div class="meta">${esc(s.weapon)}${t ? ` · <span class="tier"></span>${esc(t.name.replace(" Edition", ""))}` : ""}</div>
+      <div class="name">${esc(nm(s.name))}</div>
+      <div class="meta">${esc(nm(s.weapon))}${t ? ` · <span class="tier"></span>${esc(nm(t.name).replace(" Edition", ""))}` : ""}</div>
       ${extra}
       ${price != null ? `<div class="price">${old ? `<s>${old} VP</s>` : ""}${price} VP</div>` : ""}
     </div></div>`;
@@ -253,16 +272,16 @@ function todayView() {
   const items = rec.daily.items;
   const hits = items.filter((x) => wish.has(byAny.get(x.offer)?.id));
   let h = "";
-  if (hits.length) h += `<div class="banner">⭐ Bekleme listendeki skin pazarda: <b>${hits.map((x) => esc(byAny.get(x.offer).name)).join(", ")}</b></div>`;
+  if (hits.length) h += `<div class="banner">⭐ Bekleme listendeki skin pazarda: <b>${hits.map((x) => esc(nm(byAny.get(x.offer).name))).join(", ")}</b></div>`;
   h += `<h2>Günlük pazar · ${fmtDate(rec.date)} · yenilenmeye <span class="timer" ${endAttr(rec, rec.daily.ends_in)}></span></h2>`;
   h += `<div class="grid">${items.map((x) => card(byAny.get(x.offer), { price: x.price }, x.offer)).join("")}</div>`;
   for (const b of rec.bundles) {
     const meta = catalog.bundles[b.id] || {};
     h += `<h2>Vitrin seti · <span class="timer" ${endAttr(rec, b.ends_in || 0)}></span></h2><div class="bundle">
       ${meta.image ? `<img src="${esc(meta.image)}" alt="">` : ""}
-      <div><div class="name">${esc(meta.name || "Vitrin seti")}</div>
+      <div><div class="name">${esc(meta.name ? nm(meta.name) : "Vitrin seti")}</div>
       <div class="price">${b.discounted && b.price !== b.discounted ? `<s>${b.price} VP</s>` : ""}${b.discounted || b.price || "?"} VP${b.percent ? ` · -%${b.percent}` : ""}</div>
-      <ul>${b.skins.map((id) => { const s = byAny.get(id); return `<li>${wish.has(s?.id) ? "⭐ " : ""}${esc(s ? s.name : "Bilinmeyen")}</li>`; }).join("")}${b.other_items ? `<li>+ ${b.other_items} diğer öğe</li>` : ""}</ul></div></div>`;
+      <ul>${b.skins.map((id) => { const s = byAny.get(id); return `<li>${wish.has(s?.id) ? "⭐ " : ""}${esc(s ? nm(s.name) : "Bilinmeyen")}</li>`; }).join("")}${b.other_items ? `<li>+ ${b.other_items} diğer öğe</li>` : ""}</ul></div></div>`;
   }
   if (rec.night_market?.items?.length) {
     h += `<h2>Night Market · <span class="timer" ${endAttr(rec, rec.night_market.ends_in || 0)}></span></h2><div class="grid">${rec.night_market.items.map((x) => card(byAny.get(x.offer), { price: x.discounted, old: x.price, extra: `<div class="meta">-%${x.percent}</div>` }, x.offer)).join("")}</div>`;
@@ -278,17 +297,20 @@ function historyView() {
 }
 
 function skinsView() {
-  const weapons = [...new Set(catalog.skins.map((s) => s.weapon))].sort();
+  const weaponMap = new Map();  // en-key -> {en,tr} (dil değişince filtre seçimi bozulmasın diye en sabit anahtar)
+  for (const s of catalog.skins) if (!weaponMap.has(s.weapon.en)) weaponMap.set(s.weapon.en, s.weapon);
+  const weapons = [...weaponMap.entries()].sort((a, b) => nm(a[1]).localeCompare(nm(b[1])));
   const tiers = Object.entries(catalog.tiers).sort((a, b) => a[1].rank - b[1].rank);
-  const q = filters.q.toLowerCase();
+  const q = filters.q.trim();
+  const qBi = q ? { en: q.toLowerCase(), tr: trLower(q) } : null;
   const list = catalog.skins.filter((s) =>
-    (!q || s.name.toLowerCase().includes(q) || (s.theme || "").toLowerCase().includes(q)) &&
-    (!filters.weapon || s.weapon === filters.weapon) && (!filters.tier || s.tier === filters.tier) &&
+    (!qBi || matches(s.name, qBi) || matches(s.weapon, qBi) || matches(s.theme, qBi)) &&
+    (!filters.weapon || s.weapon.en === filters.weapon) && (!filters.tier || s.tier === filters.tier) &&
     (!filters.onlyWish || wish.has(s.id)));
   return `<div class="filters">
-    <input type="search" id="q" placeholder="Skin veya koleksiyon ara…" value="${esc(filters.q)}">
-    <select id="fw"><option value="">Tüm silahlar</option>${weapons.map((w) => `<option ${w === filters.weapon ? "selected" : ""}>${esc(w)}</option>`).join("")}</select>
-    <select id="ft"><option value="">Tüm seviyeler</option>${tiers.map(([id, t]) => `<option value="${id}" ${id === filters.tier ? "selected" : ""}>${esc(t.name.replace(" Edition", ""))}</option>`).join("")}</select>
+    <input type="search" id="q" placeholder="Skin veya koleksiyon ara… (EN/TR)" value="${esc(filters.q)}">
+    <select id="fw"><option value="">Tüm silahlar</option>${weapons.map(([key, w]) => `<option value="${esc(key)}" ${key === filters.weapon ? "selected" : ""}>${esc(nm(w))}</option>`).join("")}</select>
+    <select id="ft"><option value="">Tüm seviyeler</option>${tiers.map(([id, t]) => `<option value="${id}" ${id === filters.tier ? "selected" : ""}>${esc(nm(t.name).replace(" Edition", ""))}</option>`).join("")}</select>
     <label class="note" style="align-self:center"><input type="checkbox" id="fo" ${filters.onlyWish ? "checked" : ""}> sadece ⭐</label></div>
     <div class="note" style="margin-bottom:10px">${list.length} skin</div>
     <div class="grid small">${list.slice(0, shown).map((s) => card(s, { extra: seenInfo(s.id) })).join("")}</div>

@@ -62,9 +62,9 @@ def _save_offset(offset):
 
 
 def _fmt(s, index):
-    tier = index.tier(s).get("name", "").replace(" Edition", "")
+    tier = catalog.dname(index.tier(s).get("name", "")).replace(" Edition", "")
     extra = f" · {tier}" if tier else ""
-    return f"{html.escape(s['name'])} ({html.escape(s['weapon'])}{extra})"
+    return f"{html.escape(catalog.dname(s['name']))} ({html.escape(catalog.dname(s['weapon']))}{extra})"
 
 
 def handle(text, index, wishlist):
@@ -83,7 +83,7 @@ def handle(text, index, wishlist):
         items = [s for s in (index.skin(i) for i in wishlist) if s]
         if not items:
             return "Bekleme listen boş. /ekle &lt;skin adı&gt; ile ekleyebilirsin.", False
-        lines = "\n".join(f"⭐ {_fmt(s, index)}" for s in sorted(items, key=lambda s: s["name"]))
+        lines = "\n".join(f"⭐ {_fmt(s, index)}" for s in sorted(items, key=lambda s: catalog.dname(s["name"])))
         return f"<b>Bekleme listen ({len(items)})</b>\n{lines}", False
 
     if cmd == "/ara":
@@ -113,7 +113,9 @@ def handle(text, index, wishlist):
     if cmd == "/sil":
         if not arg:
             return "Kullanım: /sil &lt;skin adı&gt;", False
-        matches = [s for s in (index.skin(i) for i in wishlist) if s and arg.lower() in s["name"].lower()]
+        arg_en, arg_tr = arg.lower(), catalog.tr_lower(arg)
+        matches = [s for s in (index.skin(i) for i in wishlist)
+                   if s and (arg_en in s["name"]["en"].lower() or arg_tr in catalog.tr_lower(s["name"]["tr"]))]
         if not matches:
             return f"Listende '{html.escape(arg)}' ile eşleşen bir şey yok.", False
         if len(matches) > 1:

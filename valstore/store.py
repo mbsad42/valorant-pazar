@@ -113,7 +113,7 @@ def _dur(sec):
 
 def _name(index, any_id):
     s = index.skin(any_id)
-    return s["name"] if s else f"Bilinmeyen skin ({any_id[:8]})"
+    return catalog.dname(s["name"]) if s else f"Bilinmeyen skin ({any_id[:8]})"
 
 
 def _star(index, any_id, wishlist):
@@ -139,13 +139,13 @@ def notify_day(rec, index, wishlist, vp=None):
     d = dt.date.fromisoformat(rec["date"])
     for where, s, price in wishlist_hits(rec, index, wishlist):
         cost = f" — <b>{price} VP</b>" if price else ""
-        notify.send_photo(s["icon"], f"🚨 <b>BEKLEDİĞİN SKİN PAZARDA!</b>\n{html.escape(s['name'])}{cost}\n📍 {where}")
+        notify.send_photo(s["icon"], f"🚨 <b>BEKLEDİĞİN SKİN PAZARDA!</b>\n{html.escape(catalog.dname(s['name']))}{cost}\n📍 {where}")
 
     lines = [f"🛒 <b>Valorant pazarı</b> · {d.day} {MONTHS[d.month - 1]}"]
     photos = []
     for n, x in enumerate(rec["daily"]["items"], 1):
         s = index.skin(x["offer"])
-        tier = index.tier(s).get("name", "")
+        tier = catalog.dname(index.tier(s).get("name", ""))
         lines.append(f"{n}. <b>{html.escape(_name(index, x['offer']))}</b> · {x['price']} VP"
                      f"{' · ' + tier if tier else ''}{_star(index, x['offer'], wishlist)}")
         photos.append(s["icon"] if s else None)
@@ -169,6 +169,6 @@ def notify_day(rec, index, wishlist, vp=None):
 def notify_new_skins(added):
     if not added:
         return
-    names = "\n".join(f"• {html.escape(s['name'])}" for s in added[:25])
+    names = "\n".join(f"• {html.escape(catalog.dname(s['name']))}" for s in added[:25])
     more = f"\n… ve {len(added) - 25} tane daha" if len(added) > 25 else ""
     notify.send_text(f"🆕 <b>Kataloğa {len(added)} yeni skin eklendi</b>\n{names}{more}")

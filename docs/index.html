@@ -71,6 +71,8 @@
   .card .body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 2px; flex: 1; }
   .name { font-weight: 600; }
   .meta { color: var(--muted); font-size: 12.5px; }
+  .meta.seen { color: var(--accent2); }
+  .meta.seen-never { opacity: .6; }
   .price { margin-top: auto; padding-top: 6px; font: 700 15px/1 var(--disp); color: var(--ok); letter-spacing: .3px; }
   .price s { color: var(--muted); font-weight: 400; font-family: system-ui, sans-serif; font-size: 13px; margin-right: 6px; }
   .tier { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; background: var(--tier, var(--muted)); box-shadow: 0 0 6px var(--tier, transparent); }
@@ -170,7 +172,7 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 const TABS = [["today", "🛒", "Bugün"], ["history", "📜", "Geçmiş"], ["skins", "🗡️", "Tüm skinler"], ["wish", "⭐", "Bekleme listesi"]];
 const MONTHS = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
 
-let catalog, history = [], wishSaved = [], wish = new Set(), byAny = new Map();
+let catalog, history = [], wishSaved = [], wish = new Set(), byAny = new Map(), appear = new Map();
 let tab = "today", shown = 60, filters = { q: "", weapon: "", tier: "", onlyWish: false };
 const ls = {
   get(k, d = "") { try { return localStorage.getItem(k) ?? d; } catch { return d; } },
@@ -194,6 +196,11 @@ async function init() {
   wishSaved = wishSaved.skins || [];
   wish = new Set(wishSaved);
   for (const s of catalog.skins) { byAny.set(s.id, s); s.levels.forEach((l) => byAny.set(l, s)); }
+  for (const rec of history) {  // skin başına geçmişte hangi tarihlerde çıktığı
+    const mark = (x) => { const s = byAny.get(x.offer); if (!s) return; if (!appear.has(s.id)) appear.set(s.id, []); appear.get(s.id).push(rec.date); };
+    rec.daily.items.forEach(mark);
+    (rec.night_market?.items || []).forEach(mark);
+  }
   $("#sub").textContent = `${catalog.skins.length} skin · oyun sürümü ${catalog.game_version.replace("release-", "").split("-")[0]} · ${history.length} günlük geçmiş`;
   $("#nav").innerHTML = TABS.map(([k, ic, n]) => `<button data-t="${k}"><span class="ic">${ic}</span>${n}</button>`).join("");
   $("#nav").onclick = (e) => { const t = e.target.closest("button")?.dataset.t; if (t) go(t); };
@@ -220,6 +227,11 @@ function tick() {
   document.querySelectorAll("[data-end]").forEach((el) => { el.textContent = fmtDur((+el.dataset.end - Date.now()) / 1000); });
 }
 function endAttr(rec, sec) { return `data-end="${new Date(rec.fetched_at).getTime() + sec * 1000}"`; }
+function seenInfo(id) {
+  const d = appear.get(id);
+  if (!d?.length) return '<div class="meta seen-never">Daha önce görülmedi</div>';
+  return `<div class="meta seen">🕓 ${d.length}× · son görülme ${fmtDate(d[d.length - 1])}</div>`;
+}
 
 function card(s, { price, old, extra = "" } = {}, offerId) {
   if (!s) return `<div class="card"><div class="img">?</div><div class="body"><div class="name">Bilinmeyen skin</div><div class="meta">${esc((offerId || "").slice(0, 8))} · katalog güncellenince görünür</div></div></div>`;
@@ -279,7 +291,7 @@ function skinsView() {
     <select id="ft"><option value="">Tüm seviyeler</option>${tiers.map(([id, t]) => `<option value="${id}" ${id === filters.tier ? "selected" : ""}>${esc(t.name.replace(" Edition", ""))}</option>`).join("")}</select>
     <label class="note" style="align-self:center"><input type="checkbox" id="fo" ${filters.onlyWish ? "checked" : ""}> sadece ⭐</label></div>
     <div class="note" style="margin-bottom:10px">${list.length} skin</div>
-    <div class="grid small">${list.slice(0, shown).map((s) => card(s, {})).join("")}</div>
+    <div class="grid small">${list.slice(0, shown).map((s) => card(s, { extra: seenInfo(s.id) })).join("")}</div>
     ${list.length > shown ? `<div class="row" style="justify-content:center"><button class="btn ghost" id="more">Daha fazla göster</button></div>` : ""}`;
 }
 
@@ -288,7 +300,7 @@ function wishView() {
   const list = [...wish].map((id) => byAny.get(id)).filter(Boolean);
   const auto = autoRepo();
   return `<h2>Bekleme listem (${list.length})</h2>
-    ${list.length ? `<div class="grid small">${list.map((s) => card(s, {})).join("")}</div>` : '<div class="empty">Boş. "Tüm skinler" sekmesinde ☆ simgesine dokunarak skin ekle.</div>'}
+    ${list.length ? `<div class="grid small">${list.map((s) => card(s, { extra: seenInfo(s.id) })).join("")}</div>` : '<div class="empty">Boş. "Tüm skinler" sekmesinde ☆ simgesine dokunarak skin ekle, ya da Telegram\'da /ekle &lt;skin adı&gt; yaz.</div>'}
     <div class="row"><button class="btn" id="save" ${dirty ? "" : "disabled"}>${dirty ? "GitHub'a kaydet" : "Kayıtlı"}</button>
       <span class="note">${dirty ? "Değişiklikler henüz botun okuduğu listeye yazılmadı." : "Bot bu listeye göre bildirim gönderir."}</span></div>
     ${isLocal ? "" : isGithub ? `<div class="box"><b>Kaydetme ayarı</b>

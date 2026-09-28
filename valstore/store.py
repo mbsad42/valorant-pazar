@@ -76,6 +76,11 @@ def load_wishlist():
     return set(_read(WISHLIST_FILE, {"skins": []}).get("skins", []))
 
 
+def save_wishlist(ids):
+    WISHLIST_FILE.parent.mkdir(parents=True, exist_ok=True)
+    WISHLIST_FILE.write_text(json.dumps({"skins": sorted(set(ids))}, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
 def record(rec):
     """Kaydı geçmişe ekler. Bugünün pazarı zaten kayıtlıysa güncellenir; True dönerse yeni gündür."""
     history = load_history()

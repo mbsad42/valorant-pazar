@@ -105,3 +105,15 @@ class Index:
 
     def bundle_name(self, bundle_id):
         return self.catalog["bundles"].get(bundle_id, {}).get("name")
+
+    def search(self, query, limit=8):
+        """İsimde geçen metne göre skin arar; tam eşleşme varsa tek sonuç döner."""
+        q = (query or "").strip().lower()
+        if not q:
+            return []
+        exact = [s for s in self.catalog["skins"] if s["name"].lower() == q]
+        if exact:
+            return exact
+        matches = [s for s in self.catalog["skins"] if q in s["name"].lower()]
+        matches.sort(key=lambda s: (not s["name"].lower().startswith(q), len(s["name"])))
+        return matches[:limit]

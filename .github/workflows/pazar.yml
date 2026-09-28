@@ -1,0 +1,59 @@
+name: Günlük pazar
+
+on:
+  schedule:
+    - cron: "7 0 * * *"    # 00:07 UTC = 03:07 (Türkiye), pazar 00:00 UTC'de yenilenir
+    - cron: "47 1 * * *"   # yedek: ilki gecikirse/başarısız olursa; zaten kayıtlıysa bildirim atmaz
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "normal = pazarı çek, telegram-test = sadece test mesajı, katalog = sadece skin listesi"
+        type: choice
+        options: [normal, telegram-test, katalog]
+        default: normal
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pazar
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Çalıştır
+        env:
+          RIOT_COOKIES: ${{ secrets.RIOT_COOKIES }}
+          STATE_KEY: ${{ secrets.STATE_KEY }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RIOT_SHARD: ${{ vars.RIOT_SHARD }}
+          VAL_LANG: ${{ vars.VAL_LANG }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          case "$MODE" in
+            telegram-test) python -m valstore --test-notify ;;
+            katalog)       python -m valstore --catalog-only ;;
+            *)             python -m valstore ;;
+          esac
+      # Riot çerezleri her yenilemede döner; çalışma başarısız olsa bile yeni çerezleri ve veriyi sakla
+      - name: Değişiklikleri kaydet
+        if: always()
+        run: |
+          git config user.name "pazar-bot"
+          git config user.email "pazar-bot@users.noreply.github.com"
+          git add -A docs/data
+          if [ -d state ]; then git add -A state; fi
+          if git diff --cached --quiet; then echo "Değişiklik yok"; else
+            git commit -m "Pazar verisi $(date -u +%F)"
+            git pull --rebase -q || true
+            git push
+          fi

@@ -54,6 +54,9 @@ jobs:
           if [ -d state ]; then git add -A state; fi
           if git diff --cached --quiet; then echo "Değişiklik yok"; else
             git commit -m "Pazar verisi $(date -u +%F)"
-            git pull --rebase -q || true
-            git push
+            for i in 1 2 3; do
+              git pull --rebase -q || true
+              git push && break
+              sleep 5
+            done
           fi

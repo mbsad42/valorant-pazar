@@ -33,12 +33,19 @@ def _get(path, lang):
 
 
 def _icon(skin):
+    # Önce varsayılan renk varyantının görseli: bazı skinlerin kendi displayIcon'u "eksik görsel" yer tutucusu
+    chromas = skin.get("chromas") or []
+    if chromas and chromas[0].get("fullRender"):
+        return chromas[0]["fullRender"]
+    levels = skin.get("levels") or []
+    if levels and levels[0].get("displayIcon"):
+        return levels[0]["displayIcon"]
     if skin.get("displayIcon"):
         return skin["displayIcon"]
-    for lv in skin.get("levels") or []:
+    for lv in levels:
         if lv.get("displayIcon"):
             return lv["displayIcon"]
-    for ch in skin.get("chromas") or []:
+    for ch in chromas:
         if ch.get("fullRender") or ch.get("displayIcon"):
             return ch.get("fullRender") or ch.get("displayIcon")
     return None

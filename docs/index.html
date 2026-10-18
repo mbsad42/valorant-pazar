@@ -189,6 +189,63 @@
   .mini .title { font: 400 19px/1.18 var(--f); letter-spacing: -.02em; margin-top: 4px; }
   .tdot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--tc); margin: 0 6px 1px 0; vertical-align: middle; }
 
+  [data-skin] { cursor: pointer; }
+  .reel-info li[data-skin]:hover { box-shadow: inset 0 0 0 1px var(--ink); }
+  .reel-info li.hit[data-skin]:hover { box-shadow: none; opacity: .88; }
+
+  /* ---------- skin görüntüleyici (oyundaki koleksiyon ekranı gibi) ---------- */
+  #viewer {
+    position: fixed; inset: 0; z-index: 45; color: #fff; display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: minmax(0, 1fr); overflow: hidden;
+    background: radial-gradient(90% 70% at 50% 42%, color-mix(in srgb, var(--tc, #2b3cff) 30%, #15161f) 0%, #0b0c11 70%);
+    clip-path: inset(100% 0 0 0); visibility: hidden; transition: clip-path .8s var(--ease), visibility 0s linear .8s;
+  }
+  #viewer.open { clip-path: inset(0 0 0 0); visibility: visible; transition: clip-path .8s var(--ease), visibility 0s; }
+  #viewer::after { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: .08; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  #viewer > * { position: relative; z-index: 1; }
+  .v-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 22px var(--pad) 0; }
+  .v-top > div:first-child { min-width: 0; }
+  .v-top .cap { color: rgba(255,255,255,.65); }
+  .v-name { font: 400 clamp(34px, 5.4vw, 92px)/.98 var(--f); letter-spacing: -.045em; margin: 8px 0 0; max-width: 16ch; }
+  .v-top .acts { display: flex; gap: 8px; flex: 0 0 auto; }
+  .v-top .pill.ghost { background: rgba(255,255,255,.1); color: #fff; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  #vsound .dot { transition: opacity .25s, box-shadow .25s; }
+  #vsound[aria-pressed="false"] .dot { opacity: .35; }
+  #vsound[aria-pressed="true"] .dot { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+  .v-stage { position: relative; min-height: 0; perspective: 1200px; touch-action: none; user-select: none; -webkit-user-select: none; }
+  .v-stage .bgword { color: rgba(255,255,255,.04); }
+  .v-model { position: absolute; inset: 6% 8%; display: grid; place-items: center; transform-style: preserve-3d; will-change: transform; cursor: grab; }
+  .v-model:active { cursor: grabbing; }
+  .v-model img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 40px 36px rgba(0,0,0,.55)); -webkit-user-drag: none; pointer-events: none; }
+  .v-glow { position: absolute; left: 50%; top: 50%; width: 60%; height: 40%; transform: translate(-50%, -50%); background: var(--tc); filter: blur(90px); opacity: .28; border-radius: 50%; pointer-events: none; }
+  .v-floor { position: absolute; left: 50%; bottom: 8%; width: 46%; height: 26px; transform: translateX(-50%); background: radial-gradient(closest-side, rgba(0,0,0,.55), transparent); pointer-events: none; }
+  .v-stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity .5s var(--out); background: transparent; }
+  .v-stage video.on { opacity: 1; }
+  .v-stage .v-model, .v-stage .v-floor { transition: opacity .5s var(--out); }
+  .v-stage.vid .v-model, .v-stage.vid .v-floor { opacity: 0; pointer-events: none; }
+  .v-hint { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); color: rgba(255,255,255,.55); white-space: nowrap; transition: opacity .4s; }
+  .v-stage.vid .v-hint { opacity: 0; }
+  .v-spin { position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px; border-radius: 50%; border: 2px solid rgba(255,255,255,.18); border-top-color: #fff; animation: vspin .8s linear infinite; opacity: 0; transition: opacity .3s; pointer-events: none; }
+  .v-stage.wait .v-spin { opacity: 1; }
+  @keyframes vspin { to { transform: rotate(360deg); } }
+  .v-bottom { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; padding: 0 var(--pad) clamp(20px, 4vh, 40px); }
+  .v-levels { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .v-lv { display: flex; align-items: center; gap: 12px; min-width: 220px; height: 46px; padding: 0 16px; border: 0; border-radius: 10px; cursor: pointer; text-align: left;
+    background: rgba(255,255,255,.07); color: rgba(255,255,255,.75); font: 500 12px/1 var(--f); letter-spacing: .07em; text-transform: uppercase; transition: background .25s, color .25s; }
+  .v-lv b { font-weight: 600; color: #fff; min-width: 1.6em; }
+  .v-lv .pl { margin-left: auto; font-size: 10px; opacity: .7; }
+  .v-lv:hover { background: rgba(255,255,255,.14); }
+  .v-lv.on { background: #fff; color: var(--ink); } .v-lv.on b { color: var(--ink); }
+  .v-chromas { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+  .v-ch { width: 52px; height: 52px; border-radius: 10px; border: 0; padding: 0; cursor: pointer; overflow: hidden; background: rgba(255,255,255,.1) center / cover no-repeat;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.2); transition: box-shadow .25s, transform .25s var(--out); }
+  .v-ch:hover { transform: translateY(-3px); }
+  .v-ch.on { box-shadow: 0 0 0 2px #0b0c11, 0 0 0 4px #fff; }
+  .v-chname { text-align: right; margin-top: 10px; color: rgba(255,255,255,.7); min-height: 1.5em; }
+  .v-top, .v-bottom { opacity: 0; transform: translate3d(0, 24px, 0); transition: opacity .3s, transform .3s; }
+  #viewer.open .v-top, #viewer.open .v-bottom { opacity: 1; transform: none; transition: opacity .8s var(--out) .35s, transform 1s var(--out) .35s; }
+  #viewer.open .v-bottom { transition-delay: .45s; }
+
   /* ---------- vitrin seti (reel) ---------- */
   .reel { position: relative; aspect-ratio: 21 / 9; border-radius: var(--r-lg); overflow: hidden; background: #000; }
   .reel img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scale(1.04); transition: transform 1.6s var(--out); }
@@ -279,6 +336,17 @@
     .fine { text-align: left; }
     .m-foot { flex-direction: column; }
   }
+  @media (max-width: 760px) {
+    .v-top { padding-top: 16px; }
+    .v-bottom { flex-direction: column; align-items: stretch; gap: 14px; }
+    .v-levels { flex-direction: row; overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--pad)); padding: 0 var(--pad); }
+    .v-levels::-webkit-scrollbar { display: none; }
+    .v-lv { min-width: 0; flex: 0 0 auto; height: 40px; padding: 0 14px; }
+    .v-lv .pl { display: none; }
+    .v-chromas { justify-content: flex-start; }
+    .v-ch { width: 44px; height: 44px; }
+    .v-chname { text-align: left; margin-top: 0; }
+  }
   @media (max-width: 440px) {
     .pill .wide { display: none; }
     .pill .narrow { display: inline; }
@@ -286,7 +354,7 @@
     .logo sup { display: none; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .rv, .lines .ln > span, .m-links .rl, .m-links sup { transition: none !important; opacity: 1 !important; transform: none !important; }
+    .rv, .lines .ln > span, .m-links .rl, .m-links sup, .v-top, .v-bottom { transition: none !important; opacity: 1 !important; transform: none !important; }
     header.top, .flogo { transition: none; }
     .ticker .track { animation: none; }
     #loader { display: none; }
@@ -322,6 +390,8 @@
     <div class="cap" id="mver"></div>
   </div>
 </div>
+
+<div id="viewer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="vname"></div>
 
 <main id="main"></main>
 <div id="toast" role="status"></div>
@@ -388,7 +458,7 @@ const starBtn = (s) => {
 /* ---------- kartlar ---------- */
 function work(s, { price, old, pct, anchor } = {}, offerId) {
   if (!s) return `<article class="work"><div class="media" style="--tc:#5b5e70"></div><div class="cap meta">Bilinmeyen · ${esc((offerId || "").slice(0, 8))}</div><div class="title">Katalog güncellenince görünür</div></article>`;
-  return `<article class="work rv ${wish.has(s.id) ? "hit" : ""}" ${anchor ? `id="${anchor}"` : ""} style="--tc:${tierColor(s)}">
+  return `<article class="work rv ${wish.has(s.id) ? "hit" : ""}" ${anchor ? `id="${anchor}"` : ""} data-skin="${s.id}" tabindex="0" style="--tc:${tierColor(s)}">
     <div class="media">${starBtn(s)}${s.icon ? `<img class="sk" loading="lazy" src="${esc(s.icon)}" alt="">` : ""}
       ${price != null ? `<span class="tagp">${old ? `<s>${old}</s>` : ""}${price} VP</span>` : ""}${pct ? `<span class="tagp r">−%${pct}</span>` : ""}</div>
     <div class="cap meta" ${metaAttr()}>${esc(nm(s.weapon))} • ${esc(tierName(s))}</div>
@@ -397,7 +467,7 @@ function work(s, { price, old, pct, anchor } = {}, offerId) {
 }
 function mini(s, { price, extra = "", ring = true } = {}, offerId) {
   if (!s) return `<article class="mini"><div class="media" style="--tc:#5b5e70"></div><div class="cap meta">Bilinmeyen · ${esc((offerId || "").slice(0, 8))}</div></article>`;
-  return `<article class="mini ${ring && wish.has(s.id) ? "hit" : ""}" style="--tc:${tierColor(s)}">
+  return `<article class="mini ${ring && wish.has(s.id) ? "hit" : ""}" data-skin="${s.id}" tabindex="0" style="--tc:${tierColor(s)}">
     <div class="media">${starBtn(s)}${s.icon ? `<img class="sk" loading="lazy" src="${esc(s.icon)}" alt="">` : ""}${price != null ? `<span class="tagp">${price} VP</span>` : ""}</div>
     <div class="cap meta" ${metaAttr()}><span class="tdot"></span>${esc(nm(s.weapon))} • ${esc(tierName(s))}</div>
     <div class="title">${esc(nm(s.name))}</div>${extra}
@@ -426,7 +496,7 @@ function todayView() {
   }
   const flHtml = floats.slice(0, 5).map((s, i) => {
     const p = FLOAT_POS[i];
-    return `<div class="fl ${p.z < 0.6 ? "far" : ""}" data-i="${i}" data-goto="w${i}" style="--tc:${tierColor(s)};z-index:${Math.round(p.z * 10)}" title="${esc(nm(s.name))}">
+    return `<div class="fl ${p.z < 0.6 ? "far" : ""}" data-i="${i}" data-skin="${s.id}" style="--tc:${tierColor(s)};z-index:${Math.round(p.z * 10)}" title="${esc(nm(s.name))}">
       <div class="glow"></div><img src="${esc(s.icon)}" alt="${esc(nm(s.name))}" draggable="false"></div>`;
   }).join("");
 
@@ -472,7 +542,7 @@ function todayView() {
         <div class="marks rv"><i>+</i><i>+</i><i>+</i><i>+</i><i>+</i></div>
         <div class="reel-info rv"><div><div class="title">${esc(meta.name ? nm(meta.name) : "Vitrin seti")}</div>
           <div class="cap clockline" style="margin-top:10px">Kalan süre <b ${endAttr(rec, b.ends_in || 0)}></b></div></div>
-          <ul>${b.skins.map((id) => { const s = byAny.get(id); return `<li class="${s && wish.has(s.id) ? "hit" : ""}">${esc(s ? nm(s.name) : "Bilinmeyen")}</li>`; }).join("")}${b.other_items ? `<li>+ ${b.other_items} diğer öğe</li>` : ""}</ul></div></div>`;
+          <ul>${b.skins.map((id) => { const s = byAny.get(id); return `<li class="${s && wish.has(s.id) ? "hit" : ""}" ${s ? `data-skin="${s.id}" tabindex="0"` : ""}>${esc(s ? nm(s.name) : "Bilinmeyen")}</li>`; }).join("")}${b.other_items ? `<li>+ ${b.other_items} diğer öğe</li>` : ""}</ul></div></div>`;
     });
     h += `</section>`;
   }
@@ -627,6 +697,124 @@ function startHero() {
 function openMenu() { $("#menu").classList.add("open"); $("#menu").setAttribute("aria-hidden", "false"); $("#menuBtn").setAttribute("aria-expanded", "true"); document.body.classList.add("lock"); }
 function closeMenu() { $("#menu").classList.remove("open"); $("#menu").setAttribute("aria-hidden", "true"); $("#menuBtn").setAttribute("aria-expanded", "false"); document.body.classList.remove("lock"); }
 
+/* ---------- skin görüntüleyici ----------
+   Oyundaki koleksiyon ekranının karşılığı: seviye videoları Riot'un oyun içi önizleme kayıtları
+   (valorant-api.com "streamedVideo"); videosu olmayan seviye/varyantta tam görsel sürüklenerek çevrilir. */
+const MEDIA_CDN = "https://media.valorant-api.com/";
+const LEVEL_ITEM = {
+  VFX: "Görsel efekt", Animation: "Animasyon", Finisher: "Bitiriş", SoundEffects: "Ses efekti", KillCounter: "Leş sayacı",
+  InspectAndKill: "İnceleme ve leş", KillBanner: "Leş afişi", KillEffect: "Leş efekti", TopFrag: "Top frag", Transformation: "Dönüşüm",
+  Randomizer: "Rastgele", AttackerDefenderSwap: "Takıma göre", Voiceover: "Seslendirme", HeartbeatAndMapSensor: "Kalp atışı",
+};
+let mediaP = null;
+const viewer = { skin: null, lvl: 0, ch: 0, levels: [], chromas: [], muted: true, raf: 0, pushed: false };
+const mediaUrl = (u) => (u && !/^https?:/.test(u) ? MEDIA_CDN + u : u);
+function chromaLabel(c, i) {
+  const m = nm(c.n).match(/\(([^)]+)\)/);
+  const t = m ? m[1].replace(/^(Variant|Varyant)\s*\d+\s*/i, "") : "";
+  return t || (i === 0 ? "Varsayılan" : `Varyant ${i}`);
+}
+async function openViewer(id) {
+  const s = byAny.get(id);
+  if (!s) return;
+  closeMenu();
+  viewer.skin = s;
+  mediaP ??= getJSON("data/media.json", {});
+  const el = $("#viewer");
+  el.style.setProperty("--tc", tierColor(s));
+  // media.json gelene kadar (ya da hiç yoksa) katalogdaki tek videoyla başla
+  const fallback = { levels: s.levels.map((_, i) => (i === s.levels.length - 1 && s.video ? { v: s.video } : {})), chromas: [] };
+  const fill = (m) => {
+    viewer.levels = m.levels?.length ? m.levels : fallback.levels;
+    viewer.chromas = m.chromas || [];
+    const lastVid = viewer.levels.map((l) => !!l.v).lastIndexOf(true);
+    viewer.lvl = lastVid >= 0 ? lastVid : 0;  // oyundaki gibi en üst seviyenin önizlemesiyle aç
+    viewer.ch = 0;
+  };
+  fill(fallback);
+  el.innerHTML = `<div class="v-top"><div><div class="cap" ${metaAttr()}>${esc(nm(s.weapon))} • ${esc(tierName(s))}</div>
+      <h2 class="v-name" id="vname">${esc(nm(s.name))}</h2></div>
+      <div class="acts"><button class="pill ghost" id="vsound" aria-pressed="${!viewer.muted}" title="Videonun sesi" hidden><span class="dot"></span>Ses</button>
+      <button class="pill" id="vclose"><span class="roll"><span data-t="Kapat">Kapat</span></span><span aria-hidden="true">✕</span></button></div></div>
+    <div class="v-stage" id="vstage"><div class="bgword">${esc(nm(s.weapon))}</div><div class="v-glow"></div><div class="v-floor"></div>
+      <div class="v-model" id="vmodel"><img id="vimg" alt="${esc(nm(s.name))}" draggable="false"></div>
+      <video id="vvid" playsinline muted loop preload="auto"></video><div class="v-spin"></div>
+      <div class="cap v-hint">Sürükleyerek çevir</div></div>
+    <div class="v-bottom"><div class="v-levels" id="vlevels"></div><div><div class="v-chromas" id="vchromas"></div><div class="cap v-chname" id="vchname"></div></div></div>`;
+  viewerControls();
+  viewerShow();
+  el.classList.add("open"); el.setAttribute("aria-hidden", "false"); document.body.classList.add("lock");
+  if (!viewer.pushed) { window.history.pushState({ viewer: 1 }, ""); viewer.pushed = true; }  // telefonda "geri" görüntüleyiciyi kapatsın
+  startViewerTilt();
+  const m = (await mediaP)[s.id];
+  if (m && viewer.skin === s) { fill(m); viewerControls(); viewerShow(); }
+}
+function viewerControls() {
+  const lv = viewer.levels, ch = viewer.chromas;
+  $("#vlevels").innerHTML = lv.length > 1 || lv[0]?.v ? lv.map((l, i) => `<button class="v-lv ${i === viewer.lvl && !viewer.ch ? "on" : ""}" data-vlv="${i}">
+    <b>${String(i + 1).padStart(2, "0")}</b>${i === 0 ? "Temel" : esc(LEVEL_ITEM[l.k] || `Seviye ${i + 1}`)}${l.v ? '<span class="pl">▶</span>' : ""}</button>`).join("") : "";
+  $("#vchromas").innerHTML = ch.length > 1 ? ch.map((c, i) => `<button class="v-ch ${i === viewer.ch ? "on" : ""}" data-vch="${i}" title="${esc(chromaLabel(c, i))}"
+    style="background-image:url('${esc(mediaUrl(c.s || c.r))}')${c.s ? "" : ";background-size:contain"}" aria-label="${esc(chromaLabel(c, i))}"></button>`).join("") : "";
+  $("#vchname").textContent = ch.length > 1 ? chromaLabel(ch[viewer.ch], viewer.ch) : "";
+}
+function viewerPick(lvl, ch) {
+  if (lvl != null) { viewer.lvl = lvl; viewer.ch = 0; }
+  if (ch != null) viewer.ch = ch;
+  viewerControls(); viewerShow();
+}
+function viewerShow() {
+  const s = viewer.skin, c = viewer.chromas[viewer.ch];
+  const vid = viewer.ch ? c?.v : viewer.levels[viewer.lvl]?.v;
+  const img = mediaUrl(viewer.ch ? c?.r : viewer.chromas[0]?.r) || s.icon;
+  const st = $("#vstage"), v = $("#vvid"), im = $("#vimg");
+  if (im.getAttribute("src") !== img) im.src = img || "";
+  $("#vsound").hidden = !vid;
+  if (!vid) { st.classList.remove("vid", "wait"); v.classList.remove("on"); v.pause(); v.removeAttribute("src"); v.load(); return; }
+  if (v.getAttribute("src") === vid) return;
+  st.classList.add("vid", "wait"); v.classList.remove("on");
+  v.muted = viewer.muted; v.src = vid;
+  v.oncanplay = () => { st.classList.remove("wait"); v.classList.add("on"); v.play().catch(() => {}); };
+  v.onerror = () => { st.classList.remove("vid", "wait"); };  // video açılmazsa çevrilebilir görsele dön
+  v.play().catch(() => {});
+}
+function viewerSound() {
+  viewer.muted = !viewer.muted;
+  const v = $("#vvid"); v.muted = viewer.muted; v.play().catch(() => {});
+  $("#vsound").setAttribute("aria-pressed", String(!viewer.muted));
+}
+function closeViewer(fromPop = false) {
+  if (!viewer.skin) return;
+  viewer.skin = null;
+  cancelAnimationFrame(viewer.raf);
+  const el = $("#viewer"), v = $("#vvid");
+  v?.pause();
+  el.classList.remove("open"); el.setAttribute("aria-hidden", "true");
+  if (!$("#menu").classList.contains("open")) document.body.classList.remove("lock");
+  setTimeout(() => { if (!viewer.skin) el.innerHTML = ""; }, 800);  // kapanış perdesi bitince videoyu bırak
+  if (viewer.pushed) { viewer.pushed = false; if (!fromPop) window.history.back(); }
+}
+// sürükleyince model eksen etrafında döner, bırakınca yavaşça salınmaya geri döner
+function startViewerTilt() {
+  const st = $("#vstage"), md = $("#vmodel");
+  let ry = 0, rx = 0, ty = -18, tx = 6, drag = null, idle = true;
+  st.onpointerdown = (e) => { if (st.classList.contains("vid")) return; drag = { x: e.clientX, y: e.clientY, ry: ty, rx: tx }; idle = false; st.setPointerCapture(e.pointerId); };
+  st.onpointermove = (e) => {
+    if (!drag) return;
+    ty = drag.ry + (e.clientX - drag.x) * 0.45;
+    tx = Math.max(-25, Math.min(25, drag.rx - (e.clientY - drag.y) * 0.2));
+  };
+  st.onpointerup = st.onpointercancel = () => { drag = null; setTimeout(() => { if (!drag) idle = true; }, 1600); };
+  const frame = (now) => {
+    viewer.raf = requestAnimationFrame(frame);
+    const t = now / 1000;
+    if (idle && !reduced) { ty += (Math.sin(t * 0.5) * 24 - ty) * 0.02; tx += (Math.cos(t * 0.4) * 6 - tx) * 0.02; }
+    ry += (ty - ry) * 0.12; rx += (tx - rx) * 0.12;
+    md.style.transform = `rotateY(${ry}deg) rotateX(${rx}deg) translateY(${reduced ? 0 : Math.sin(t * 1.1) * 8}px)`;
+  };
+  cancelAnimationFrame(viewer.raf);
+  viewer.raf = requestAnimationFrame(frame);
+}
+
 /* ---------- bekleme listesi ---------- */
 const isDirty = () => wish.size !== wishSaved.length || [...wish].some((id) => !wishSaved.includes(id));
 function updateListPill() {
@@ -685,9 +873,14 @@ async function saveWishlist() {
 
 /* ---------- olaylar ---------- */
 document.addEventListener("click", (e) => {
-  const t = e.target.closest("button, a, .fl");
+  const t = e.target.closest("button, a, [data-skin]");
   if (!t) return;
   if (t.dataset.star) { e.preventDefault(); toggleStar(t.dataset.star); }
+  else if (t.dataset.skin) openViewer(t.dataset.skin);
+  else if (t.dataset.vlv) viewerPick(+t.dataset.vlv, null);
+  else if (t.dataset.vch) viewerPick(null, +t.dataset.vch);
+  else if (t.id === "vclose") closeViewer();
+  else if (t.id === "vsound") viewerSound();
   else if (t.dataset.wf || t.dataset.tf || t.dataset.only) {
     const [set, key] = t.dataset.wf ? [filters.weapons, t.dataset.wf] : t.dataset.tf ? [filters.tiers, t.dataset.tf] : [null];
     if (set) set.has(key) ? set.delete(key) : set.add(key); else filters.onlyWish = !filters.onlyWish;
@@ -706,7 +899,11 @@ document.addEventListener("click", (e) => {
 document.addEventListener("input", (e) => {
   if (e.target.id === "q") { filters.q = e.target.value; shown = 60; renderSkinResults(); }
 });
-addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(); });
+addEventListener("keydown", (e) => {
+  if (e.key === "Escape") { if (viewer.skin) closeViewer(); else closeMenu(); }
+  else if (e.key === "Enter" && e.target.matches?.("[data-skin]")) openViewer(e.target.dataset.skin);
+});
+addEventListener("popstate", () => { if (viewer.skin) closeViewer(true); });
 addEventListener("hashchange", () => go(R2T[location.hash.slice(1)] || "today"));
 let lastY = 0;
 addEventListener("scroll", () => {

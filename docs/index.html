@@ -31,13 +31,18 @@
   .cap { font: 500 11px/1.5 var(--f); letter-spacing: .07em; text-transform: uppercase; color: var(--ink2); }
 
   /* ---------- harf kaydırma (hover) ---------- */
-  .roll { display: inline-block; overflow: hidden; height: 1.1em; line-height: 1.1; vertical-align: middle; }
+  /* maske harfin kendisine değil kelimeye uygulanıyor: dar harf kutusu (negatif harf aralığı) ve
+     sıkı satır yüksekliği Ü/İ noktalarını, ç/ş/g kuyruklarını ve harfin sağ kenarını kesiyordu.
+     Kopya metin .3em aşağıda bekliyor ki şapkası/noktası maskenin alt payından görünmesin. */
+  .roll { display: inline-block; overflow: hidden; vertical-align: middle; line-height: 1.1; padding: .22em .1em; margin: -.22em -.1em; }
   .roll > span { display: block; position: relative; transition: transform .5s var(--ease); }
-  .roll > span::after { content: attr(data-t); position: absolute; left: 0; top: 100%; }
-  .rl { display: inline-block; overflow: hidden; vertical-align: top; line-height: 1.08; height: 1.08em; }
+  .roll > span::after { content: attr(data-t); position: absolute; left: 0; top: calc(100% + .3em); }
+  .rw { display: inline-block; overflow: hidden; vertical-align: top; white-space: nowrap; line-height: 1.08; padding: .16em .12em .2em .06em; margin: -.16em -.12em -.2em -.06em; }
+  .rl { display: inline-block; vertical-align: top; }
   .rl > span { display: block; position: relative; transition: transform .55s var(--ease); }
-  .rl > span::after { content: attr(data-t); position: absolute; left: 0; top: 100%; }
-  :is(a, button):hover > .roll > span, :is(a, button):hover .rl > span { transform: translateY(-100%); }
+  .rl > span::after { content: attr(data-t); position: absolute; left: 0; top: calc(100% + .3em); }
+  :is(a, button):hover > .roll > span, :is(a, button):hover .rl > span { transform: translateY(calc(-100% - .3em)); }
+  @media (hover: none) { :is(a, button):hover > .roll > span, :is(a, button):hover .rl > span { transform: none; } }
 
   /* ---------- yükleme ekranı ---------- */
   #loader { position: fixed; inset: 0; z-index: 60; background: #000; color: #fff; transition: transform 1s var(--ease); }
@@ -48,11 +53,20 @@
   #loader.out { transform: translateY(-100%); }
 
   /* ---------- üst bar ---------- */
-  header.top { position: fixed; inset: 0 0 auto 0; z-index: 20; display: flex; align-items: center; justify-content: flex-end; padding: 22px var(--pad); pointer-events: none; }
+  header.top { position: fixed; inset: 0 0 auto 0; z-index: 20; display: flex; align-items: center; justify-content: flex-end; padding: 22px var(--pad); pointer-events: none; transition: transform .7s var(--ease); }
+  /* aşağı kaydırırken üst bar ve logo yukarı çekiliyor, yukarı kaydırınca geri geliyor: içerikle üst üste binmesin */
+  .hdr-hide header.top { transform: translate3d(0, -100%, 0); }
+  /* kaydırınca barın arkasında aşağı doğru sönen buzlu zemin: altından geçen yazılarla karışmasın */
+  header.top::before { content: ""; position: absolute; inset: 0 0 -18px 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity .4s;
+    background: linear-gradient(var(--bg) 55%, color-mix(in srgb, var(--bg) 0%, transparent));
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    -webkit-mask-image: linear-gradient(#000 60%, transparent); mask-image: linear-gradient(#000 60%, transparent); }
+  header.top.scrolled::before { opacity: 1; }
+  .hdr-hide .flogo { transform: translate3d(0, -80px, 0); }
   header.top > * { pointer-events: auto; }
   .logo { font: 600 21px/1 var(--f); letter-spacing: .06em; text-decoration: none; text-transform: uppercase; color: #fff; }
   /* logo ayrı duruyor: açık zeminde koyu, koyu sahne kartının üstünde açık görünsün diye */
-  .flogo { position: fixed; z-index: 21; left: var(--pad); top: 33px; mix-blend-mode: difference; }
+  .flogo { position: fixed; z-index: 21; left: var(--pad); top: 33px; mix-blend-mode: difference; transition: transform .7s var(--ease); }
   .logo sup { font-size: 9px; letter-spacing: .12em; margin-left: 5px; font-weight: 500; }
   .tagline { position: absolute; left: 50%; top: 20px; transform: translateX(-50%); width: min(560px, 40vw); text-align: center; font: 400 clamp(17px, 1.5vw, 24px)/1.18 var(--f); letter-spacing: -.01em; transition: opacity .5s var(--out), transform .5s var(--out); }
   header.scrolled .tagline, header.notag .tagline { opacity: 0; transform: translate(-50%, -12px); pointer-events: none; }
@@ -62,6 +76,7 @@
     font: 500 12px/1 var(--f); letter-spacing: .07em; text-transform: uppercase; cursor: pointer; text-decoration: none; white-space: nowrap;
     background: var(--card); color: var(--ink); transition: background .3s, color .3s;
   }
+  header.top .pill, header.top .round { box-shadow: 0 6px 22px rgba(12,13,18,.1); }
   .pill.dark { background: var(--ink); color: #fff; }
   .pill.blue { background: var(--blue); color: #fff; }
   .pill.line { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
@@ -79,14 +94,14 @@
   #menu.open { clip-path: inset(0 0 0 0); visibility: visible; transition: clip-path .8s var(--ease), visibility 0s; }
   .m-top { display: flex; justify-content: space-between; align-items: center; }
   .m-links { display: flex; flex-direction: column; }
-  .m-links a { display: flex; align-items: flex-start; gap: 14px; text-decoration: none; font: 400 clamp(52px, 10vw, 150px)/1 var(--f); letter-spacing: -.05em; padding: .02em 0; }
+  .m-links a { display: flex; align-items: flex-start; gap: 14px; text-decoration: none; font: 400 clamp(46px, 10.5vw, 150px)/1 var(--f); letter-spacing: -.04em; padding: .04em 0; }
   .m-links a sup { font: 500 12px/1 var(--f); letter-spacing: .06em; margin-top: .9em; color: rgba(255,255,255,.5); }
   .m-links a.cur { color: var(--blue); }
-  .m-links a { opacity: 0; transform: translateY(60px); transition: opacity .8s var(--out), transform .9s var(--out); }
-  #menu.open .m-links a { opacity: 1; transform: none; transition-delay: .25s; }
-  #menu.open .m-links a:nth-child(2) { transition-delay: .31s; }
-  #menu.open .m-links a:nth-child(3) { transition-delay: .37s; }
-  #menu.open .m-links a:nth-child(4) { transition-delay: .43s; }
+  /* menü açılışı: her harf kelime maskesinin altından sırayla yükseliyor (yalnızca transform, GPU'da akıcı) */
+  .m-links .rl { transform: translate3d(0, 135%, 0); transition: transform .35s var(--ease); will-change: transform; }
+  .m-links sup { opacity: 0; transition: opacity .3s; }
+  #menu.open .m-links .rl { transform: none; transition: transform 1s var(--out); transition-delay: calc(.28s + var(--l) * 70ms + var(--i) * 22ms); }
+  #menu.open .m-links sup { opacity: 1; transition: opacity .8s var(--out); transition-delay: calc(.4s + var(--l) * 70ms); }
   .narrow { display: none; }
   .m-foot { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; color: rgba(255,255,255,.65); }
   .m-foot .cap { color: inherit; }
@@ -94,8 +109,8 @@
   /* ---------- açılış animasyonları ---------- */
   .rv { opacity: 0; transform: translateY(44px); transition: opacity 1s var(--out), transform 1s var(--out); }
   .rv.in { opacity: 1; transform: none; }
-  .lines .ln { display: block; overflow: hidden; padding-bottom: .06em; margin-bottom: -.06em; }
-  .lines .ln > span { display: block; transform: translateY(108%); transition: transform 1.1s var(--out); }
+  .lines .ln { display: block; overflow: hidden; padding: .1em 0 .16em; margin: -.1em 0 -.16em; }
+  .lines .ln > span { display: block; transform: translate3d(0, 130%, 0); transition: transform 1.1s var(--out); }
   .lines.in .ln > span { transform: none; }
   main.static .rv, main.static .lines .ln > span { transition: none; opacity: 1; transform: none; }
 
@@ -271,7 +286,8 @@
     .logo sup { display: none; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .rv, .lines .ln > span, .m-links a { transition: none !important; opacity: 1 !important; transform: none !important; }
+    .rv, .lines .ln > span, .m-links .rl, .m-links sup { transition: none !important; opacity: 1 !important; transform: none !important; }
+    header.top, .flogo { transition: none; }
     .ticker .track { animation: none; }
     #loader { display: none; }
   }
@@ -338,10 +354,10 @@ const isGithub = /\.github\.io$/.test(location.hostname);
 
 /* ---------- küçük yardımcılar ---------- */
 const roll = (t) => `<span class="roll"><span data-t="${esc(t)}">${esc(t)}</span></span>`;
-const rollLetters = (t) => [...t].map((c, i) => {
+const rollLetters = (t) => `<span class="rw" aria-label="${esc(t)}">${[...t].map((c, i) => {
   const ch = c === " " ? " " : c;
-  return `<span class="rl"><span data-t="${esc(ch)}" style="transition-delay:${i * 16}ms">${esc(ch)}</span></span>`;
-}).join("");
+  return `<span class="rl" style="--i:${i}" aria-hidden="true"><span data-t="${esc(ch)}" style="transition-delay:${i * 16}ms">${esc(ch)}</span></span>`;
+}).join("")}</span>`;
 const lines = (arr, cls = "big", indentFirst = true) =>
   `<h1 class="${cls} lines">${arr.map((t, i) => `<span class="ln"><span class="${i === 0 && indentFirst ? "ind" : ""}" style="transition-delay:${i * 90}ms">${t}</span></span>`).join("")}</h1>`;
 function tierOf(s) { return s ? catalog.tiers[s.tier] : null; }
@@ -692,7 +708,14 @@ document.addEventListener("input", (e) => {
 });
 addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(); });
 addEventListener("hashchange", () => go(R2T[location.hash.slice(1)] || "today"));
-addEventListener("scroll", () => $("#top").classList.toggle("scrolled", scrollY > 40), { passive: true });
+let lastY = 0;
+addEventListener("scroll", () => {
+  const y = scrollY, root = document.documentElement;
+  $("#top").classList.toggle("scrolled", y > 40);
+  if (y < 120 || y < lastY - 6) root.classList.remove("hdr-hide");
+  else if (y > lastY + 6) root.classList.add("hdr-hide");
+  if (Math.abs(y - lastY) > 6 || y < 120) lastY = y;
+}, { passive: true });
 
 /* ---------- yükleme ---------- */
 async function getJSON(path, fallback, onProgress) {
@@ -750,7 +773,7 @@ async function init() {
     rec.daily.items.forEach(mark);
     (rec.night_market?.items || []).forEach(mark);
   }
-  $("#mlinks").innerHTML = PAGES.map(([r, , n], i) => `<a href="#${r}"><sup>0${i + 1}</sup>${rollLetters(n)}</a>`).join("");
+  $("#mlinks").innerHTML = PAGES.map(([r, , n], i) => `<a href="#${r}" style="--l:${i}"><sup>0${i + 1}</sup>${rollLetters(n)}</a>`).join("");
   $("#mver").textContent = `${catalog.skins.length} skin · sürüm ${gameVer()}`;
   tab = R2T[location.hash.slice(1)] || "today";
   render({ animate: true });

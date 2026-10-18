@@ -15,13 +15,23 @@ def _vp(cost):
     return (cost or {}).get(VP_ID)
 
 
+def period_date(now, ends_in):
+    """Pazar 00:00 UTC'de yenilenir; kayıt tarihi = mevcut dönemin başladığı gün.
+    Riot kalan süreyi bir iki saniye eksik veriyor (bitiş 23:59:59'a düşüyor); bitiş anı en yakın saate
+    yuvarlanmazsa tarih bir gün geri kayıyor ve yeni gün dünkü kaydın üstüne yazılıyordu."""
+    if not ends_in:
+        return now.date().isoformat()
+    end = now + dt.timedelta(seconds=ends_in) + dt.timedelta(minutes=30)
+    end = end.replace(minute=0, second=0, microsecond=0)
+    return (end - dt.timedelta(days=1)).date().isoformat()
+
+
 def parse(raw, now=None):
     """Riot'un ham yanıtından kalıcı kaydı üretir."""
     now = now or dt.datetime.now(dt.timezone.utc)
     panel = raw.get("SkinsPanelLayout", {})
     ends_in = panel.get("SingleItemOffersRemainingDurationInSeconds", 0)
-    # Pazar 00:00 UTC'de yenilenir; kayıt tarihi = mevcut dönemin başladığı gün
-    date = (now + dt.timedelta(seconds=ends_in) - dt.timedelta(days=1)).date().isoformat()
+    date = period_date(now, ends_in)
 
     prices = {o["OfferID"]: _vp(o.get("Cost")) for o in panel.get("SingleItemStoreOffers", [])}
     daily = [{"offer": oid, "price": prices.get(oid)} for oid in panel.get("SingleItemOffers", [])]

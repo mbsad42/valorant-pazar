@@ -705,13 +705,14 @@ const LEVEL_ITEM = {
   VFX: "Görsel efekt", Animation: "Animasyon", Finisher: "Bitiriş", SoundEffects: "Ses efekti", KillCounter: "Leş sayacı",
   InspectAndKill: "İnceleme ve leş", KillBanner: "Leş afişi", KillEffect: "Leş efekti", TopFrag: "Top frag", Transformation: "Dönüşüm",
   Randomizer: "Rastgele", AttackerDefenderSwap: "Takıma göre", Voiceover: "Seslendirme", HeartbeatAndMapSensor: "Kalp atışı",
+  SongShuffle: "Şarkı karışımı", FishAnimation: "Balık animasyonu",
 };
 let mediaP = null;
 const viewer = { skin: null, lvl: 0, ch: 0, levels: [], chromas: [], muted: true, raf: 0, pushed: false };
 const mediaUrl = (u) => (u && !/^https?:/.test(u) ? MEDIA_CDN + u : u);
 function chromaLabel(c, i) {
   const m = nm(c.n).match(/\(([^)]+)\)/);
-  const t = m ? m[1].replace(/^(Variant|Varyant)\s*\d+\s*/i, "") : "";
+  const t = m ? m[1].replace(/^(Variant|Varyant|Stil)\s*\d+\s*[-–:]?\s*/i, "") : "";
   return t || (i === 0 ? "Varsayılan" : `Varyant ${i}`);
 }
 async function openViewer(id) {

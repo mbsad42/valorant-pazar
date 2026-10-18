@@ -12,6 +12,9 @@ LANGS = ("en-US", "tr-TR")
 NOTIFY_LANG = os.environ.get("NOTIFY_LANG", "tr")  # Telegram mesajlarında kullanılacak dil
 DATA_DIR = Path(__file__).resolve().parent.parent / "docs" / "data"
 SKINS_FILE = DATA_DIR / "skins.json"
+# Skin görüntüleyicisi için seviye videoları ve renk varyantları: panel bunu yalnızca bir skine tıklanınca yükler
+MEDIA_FILE = DATA_DIR / "media.json"
+MEDIA_CDN = "https://media.valorant-api.com/"
 
 
 def tr_lower(s):
@@ -51,6 +54,25 @@ def _icon(skin):
     return None
 
 
+def _short(url):
+    """media.valorant-api.com önekini atar; dosya her skin için aynı öneki tekrarlamasın."""
+    return url[len(MEDIA_CDN):] if url and url.startswith(MEDIA_CDN) else url
+
+
+def _media(en, tr):
+    """Skin başına {"levels": [{k, v}], "chromas": [{n: {en, tr}, s, r, v}]}; isimler iki dilli."""
+    out = {}
+    for uid, e in en["skins"].items():
+        t = tr["skins"].get(uid, e)
+        tr_names = [c["name"] for c in t["_chromas"]] if len(t["_chromas"]) == len(e["_chromas"]) else []
+        chromas = [{"n": {"en": c["name"], "tr": tr_names[i] if tr_names else c["name"]},
+                    **{k: c[k] for k in ("s", "r", "v") if c[k]}} for i, c in enumerate(e["_chromas"])]
+        levels = [{k: v for k, v in lv.items() if v} for lv in e["_levels"]]
+        if any(lv.get("v") for lv in levels) or len(chromas) > 1:
+            out[uid] = {"levels": levels, "chromas": chromas}
+    return out
+
+
 def _build_raw(lang):
     """Tek dil için ham veri: uuid'e göre indekslenmiş skin/tier/bundle."""
     weapons = _get("weapons", lang)
@@ -71,6 +93,11 @@ def _build_raw(lang):
                 "icon": _icon(s), "levels": [lv["uuid"] for lv in levels],
                 "chromas": max(len(s.get("chromas") or []) - 1, 0),
                 "video": next((lv["streamedVideo"] for lv in reversed(levels) if lv.get("streamedVideo")), None),
+                "_levels": [{"k": (lv.get("levelItem") or "").split("::")[-1] or None, "v": lv.get("streamedVideo")}
+                            for lv in levels],
+                "_chromas": [{"name": ch["displayName"], "s": _short(ch.get("swatch")),
+                              "r": _short(ch.get("fullRender") or ch.get("displayIcon")), "v": ch.get("streamedVideo")}
+                             for ch in s.get("chromas") or []],
             }
     return {
         "skins": skins,
@@ -110,6 +137,7 @@ def build():
     skins.sort(key=lambda s: (s["weapon"]["en"], s["name"]["en"]))
 
     return {
+        "media": _media(en, tr),
         "updated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
         "languages": list(LANGS),
         "game_version": version["riotClientVersion"],
@@ -129,10 +157,12 @@ def refresh():
     """Kataloğu yeniler; eklenen skinleri döner: (katalog, [yeni skinler])."""
     old = load()
     new = build()
+    media = new.pop("media")
     old_ids = {s["id"] for s in old["skins"]} if old else set()
     added = [s for s in new["skins"] if s["id"] not in old_ids] if old else []
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     SKINS_FILE.write_text(json.dumps(new, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    MEDIA_FILE.write_text(json.dumps(media, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     return new, added
 
 

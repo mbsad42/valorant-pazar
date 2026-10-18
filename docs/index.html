@@ -203,6 +203,8 @@
   #viewer::after { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: .08; mix-blend-mode: overlay;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
   #viewer > * { position: relative; z-index: 1; }
+  #viewer .v-top, #viewer .v-bottom { z-index: 2; }  /* dönen model başlığın ve düğmelerin üstüne taşmasın */
+  #viewer [hidden] { display: none !important; }
   .v-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 22px var(--pad) 0; }
   .v-top > div:first-child { min-width: 0; }
   .v-top .cap { color: rgba(255,255,255,.65); }
@@ -214,16 +216,24 @@
   #vsound[aria-pressed="true"] .dot { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
   .v-stage { position: relative; min-height: 0; perspective: 1200px; touch-action: none; user-select: none; -webkit-user-select: none; }
   .v-stage .bgword { color: rgba(255,255,255,.04); }
-  .v-model { position: absolute; inset: 6% 8%; display: grid; place-items: center; transform-style: preserve-3d; will-change: transform; cursor: grab; }
-  .v-model:active { cursor: grabbing; }
-  .v-model img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 40px 36px rgba(0,0,0,.55)); -webkit-user-drag: none; pointer-events: none; }
+  /* 3B model: aynı görsel derinlik boyunca katman katman diziliyor; ön ve arka yüz aydınlık, aradakiler
+     karanlık kalıp silahın kenar kalınlığını oluşturuyor. Döndürme yalnızca kapsayıcının transform'u. */
+  .v-model { position: absolute; inset: 4% max(6%, calc(50% - 520px)); perspective: 1100px; cursor: grab; }
+  .v-model.grab { cursor: grabbing; }
+  .v-obj { position: absolute; inset: 0; transform-style: preserve-3d; will-change: transform; }
+  .v-ly { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; -webkit-user-drag: none;
+    transform: translateZ(calc((var(--z) - var(--mid)) * var(--gap, 1px))); filter: brightness(.32) saturate(.7); }
+  .v-ly.face { filter: none; }
+  .v-play { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); z-index: 2; }
+  .v-stage.vid .v-play { bottom: 16px; }
   .v-glow { position: absolute; left: 50%; top: 50%; width: 60%; height: 40%; transform: translate(-50%, -50%); background: var(--tc); filter: blur(90px); opacity: .28; border-radius: 50%; pointer-events: none; }
-  .v-floor { position: absolute; left: 50%; bottom: 8%; width: 46%; height: 26px; transform: translateX(-50%); background: radial-gradient(closest-side, rgba(0,0,0,.55), transparent); pointer-events: none; }
+  .v-floor { position: absolute; left: 50%; bottom: 12%; width: 56%; height: 30px; margin-left: -28%; background: radial-gradient(closest-side, rgba(0,0,0,.6), transparent); pointer-events: none; }
   .v-stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity .5s var(--out); background: transparent; }
   .v-stage video.on { opacity: 1; }
   .v-stage .v-model, .v-stage .v-floor { transition: opacity .5s var(--out); }
+  .v-stage video { pointer-events: none; }
   .v-stage.vid .v-model, .v-stage.vid .v-floor { opacity: 0; pointer-events: none; }
-  .v-hint { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); color: rgba(255,255,255,.55); white-space: nowrap; transition: opacity .4s; }
+  .v-hint { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); color: rgba(255,255,255,.5); white-space: nowrap; transition: opacity .4s; pointer-events: none; }
   .v-stage.vid .v-hint { opacity: 0; }
   .v-spin { position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px; border-radius: 50%; border: 2px solid rgba(255,255,255,.18); border-top-color: #fff; animation: vspin .8s linear infinite; opacity: 0; transition: opacity .3s; pointer-events: none; }
   .v-stage.wait .v-spin { opacity: 1; }
@@ -698,8 +708,9 @@ function openMenu() { $("#menu").classList.add("open"); $("#menu").setAttribute(
 function closeMenu() { $("#menu").classList.remove("open"); $("#menu").setAttribute("aria-hidden", "true"); $("#menuBtn").setAttribute("aria-expanded", "false"); document.body.classList.remove("lock"); }
 
 /* ---------- skin görüntüleyici ----------
-   Oyundaki koleksiyon ekranının karşılığı: seviye videoları Riot'un oyun içi önizleme kayıtları
-   (valorant-api.com "streamedVideo"); videosu olmayan seviye/varyantta tam görsel sürüklenerek çevrilir. */
+   Oyundaki koleksiyon ekranının karşılığı. Riot 3B modelleri yayınlamıyor; bu yüzden skinin tam görseli
+   katmanlarla kalınlık kazanmış bir modele dönüşüyor ve parmakla/fareyle 360° çevrilip yakınlaştırılıyor.
+   Seviye ve varyant videoları (valorant-api.com "streamedVideo") isteğe bağlı olarak oynatılabiliyor. */
 const MEDIA_CDN = "https://media.valorant-api.com/";
 const LEVEL_ITEM = {
   VFX: "Görsel efekt", Animation: "Animasyon", Finisher: "Bitiriş", SoundEffects: "Ses efekti", KillCounter: "Leş sayacı",
@@ -708,7 +719,9 @@ const LEVEL_ITEM = {
   SongShuffle: "Şarkı karışımı", FishAnimation: "Balık animasyonu",
 };
 let mediaP = null;
-const viewer = { skin: null, lvl: 0, ch: 0, levels: [], chromas: [], muted: true, raf: 0, pushed: false };
+const viewer = { skin: null, lvl: 0, ch: 0, levels: [], chromas: [], muted: true, raf: 0, pushed: false, playing: false };
+const coarse = matchMedia("(pointer: coarse)").matches;
+const LAYERS = coarse ? 12 : 20;  // telefonda daha az katman: aynı görünüm, daha az GPU yükü
 const mediaUrl = (u) => (u && !/^https?:/.test(u) ? MEDIA_CDN + u : u);
 function chromaLabel(c, i) {
   const m = nm(c.n).match(/\(([^)]+)\)/);
@@ -731,6 +744,7 @@ async function openViewer(id) {
     const lastVid = viewer.levels.map((l) => !!l.v).lastIndexOf(true);
     viewer.lvl = lastVid >= 0 ? lastVid : 0;  // oyundaki gibi en üst seviyenin önizlemesiyle aç
     viewer.ch = 0;
+    viewer.playing = false;
   };
   fill(fallback);
   el.innerHTML = `<div class="v-top"><div><div class="cap" ${metaAttr()}>${esc(nm(s.weapon))} • ${esc(tierName(s))}</div>
@@ -738,15 +752,17 @@ async function openViewer(id) {
       <div class="acts"><button class="pill ghost" id="vsound" aria-pressed="${!viewer.muted}" title="Videonun sesi" hidden><span class="dot"></span>Ses</button>
       <button class="pill" id="vclose"><span class="roll"><span data-t="Kapat">Kapat</span></span><span aria-hidden="true">✕</span></button></div></div>
     <div class="v-stage" id="vstage"><div class="bgword">${esc(nm(s.weapon))}</div><div class="v-glow"></div><div class="v-floor"></div>
-      <div class="v-model" id="vmodel"><img id="vimg" alt="${esc(nm(s.name))}" draggable="false"></div>
-      <video id="vvid" playsinline muted loop preload="auto"></video><div class="v-spin"></div>
-      <div class="cap v-hint">Sürükleyerek çevir</div></div>
+      <div class="v-model" id="vmodel" role="img" aria-label="${esc(nm(s.name))}"><div class="v-obj" id="vobj" style="--mid:${(LAYERS - 1) / 2}">${
+        Array.from({ length: LAYERS }, (_, i) => `<img class="v-ly ${i === 0 || i === LAYERS - 1 ? "face" : ""}" style="--z:${i}" alt="" draggable="false">`).join("")}</div></div>
+      <video id="vvid" playsinline muted loop preload="none"></video><div class="v-spin"></div>
+      <button class="pill v-play" id="vplay" hidden></button>
+      <div class="cap v-hint">${coarse ? "Sürükle: çevir · iki parmak: yakınlaştır" : "Sürükle: çevir · tekerlek: yakınlaştır · çift tık: sıfırla"}</div></div>
     <div class="v-bottom"><div class="v-levels" id="vlevels"></div><div><div class="v-chromas" id="vchromas"></div><div class="cap v-chname" id="vchname"></div></div></div>`;
   viewerControls();
   viewerShow();
+  startViewerModel();
   el.classList.add("open"); el.setAttribute("aria-hidden", "false"); document.body.classList.add("lock");
   if (!viewer.pushed) { window.history.pushState({ viewer: 1 }, ""); viewer.pushed = true; }  // telefonda "geri" görüntüleyiciyi kapatsın
-  startViewerTilt();
   const m = (await mediaP)[s.id];
   if (m && viewer.skin === s) { fill(m); viewerControls(); viewerShow(); }
 }
@@ -761,23 +777,28 @@ function viewerControls() {
 function viewerPick(lvl, ch) {
   if (lvl != null) { viewer.lvl = lvl; viewer.ch = 0; }
   if (ch != null) viewer.ch = ch;
+  // seviye seçmek oyundaki gibi o seviyenin önizlemesini açar; varyant seçmek modeli boyar
+  viewer.playing = lvl != null && !!viewer.levels[lvl]?.v;
   viewerControls(); viewerShow();
 }
 function viewerShow() {
   const s = viewer.skin, c = viewer.chromas[viewer.ch];
   const vid = viewer.ch ? c?.v : viewer.levels[viewer.lvl]?.v;
   const img = mediaUrl(viewer.ch ? c?.r : viewer.chromas[0]?.r) || s.icon;
-  const st = $("#vstage"), v = $("#vvid"), im = $("#vimg");
-  if (im.getAttribute("src") !== img) im.src = img || "";
-  $("#vsound").hidden = !vid;
-  if (!vid) { st.classList.remove("vid", "wait"); v.classList.remove("on"); v.pause(); v.removeAttribute("src"); v.load(); return; }
+  const st = $("#vstage"), v = $("#vvid"), pb = $("#vplay");
+  $$("#vobj .v-ly").forEach((im) => { if (im.getAttribute("src") !== img) im.src = img || ""; });
+  pb.hidden = !vid;
+  pb.innerHTML = viewer.playing ? "✕&nbsp; 3B görünüme dön" : "▶&nbsp; Önizleme videosu";
+  $("#vsound").hidden = !(vid && viewer.playing);
+  if (!vid || !viewer.playing) { st.classList.remove("vid", "wait"); v.classList.remove("on"); v.pause(); v.removeAttribute("src"); v.load(); return; }
   if (v.getAttribute("src") === vid) return;
   st.classList.add("vid", "wait"); v.classList.remove("on");
   v.muted = viewer.muted; v.src = vid;
   v.oncanplay = () => { st.classList.remove("wait"); v.classList.add("on"); v.play().catch(() => {}); };
-  v.onerror = () => { st.classList.remove("vid", "wait"); };  // video açılmazsa çevrilebilir görsele dön
+  v.onerror = () => { viewer.playing = false; viewerShow(); };  // video açılmazsa modele dön
   v.play().catch(() => {});
 }
+function viewerToggleVideo() { viewer.playing = !viewer.playing; viewerShow(); }
 function viewerSound() {
   viewer.muted = !viewer.muted;
   const v = $("#vvid"); v.muted = viewer.muted; v.play().catch(() => {});
@@ -787,6 +808,7 @@ function closeViewer(fromPop = false) {
   if (!viewer.skin) return;
   viewer.skin = null;
   cancelAnimationFrame(viewer.raf);
+  viewer.ro?.disconnect();
   const el = $("#viewer"), v = $("#vvid");
   v?.pause();
   el.classList.remove("open"); el.setAttribute("aria-hidden", "true");
@@ -794,23 +816,62 @@ function closeViewer(fromPop = false) {
   setTimeout(() => { if (!viewer.skin) el.innerHTML = ""; }, 800);  // kapanış perdesi bitince videoyu bırak
   if (viewer.pushed) { viewer.pushed = false; if (!fromPop) window.history.back(); }
 }
-// sürükleyince model eksen etrafında döner, bırakınca yavaşça salınmaya geri döner
-function startViewerTilt() {
-  const st = $("#vstage"), md = $("#vmodel");
-  let ry = 0, rx = 0, ty = -18, tx = 6, drag = null, idle = true;
-  st.onpointerdown = (e) => { if (st.classList.contains("vid")) return; drag = { x: e.clientX, y: e.clientY, ry: ty, rx: tx }; idle = false; st.setPointerCapture(e.pointerId); };
-  st.onpointermove = (e) => {
-    if (!drag) return;
-    ty = drag.ry + (e.clientX - drag.x) * 0.45;
-    tx = Math.max(-25, Math.min(25, drag.rx - (e.clientY - drag.y) * 0.2));
+// Model kontrolü: tek parmak/fare ile çevir (bırakınca savrulup yavaşlar), iki parmak ya da tekerlek ile
+// yakınlaştır, çift tık ile sıfırla; dokunulmayınca oyundaki vitrin gibi kendi ekseninde yavaşça döner.
+function startViewerModel() {
+  const st = $("#vstage"), md = $("#vmodel"), obj = $("#vobj"), floor = $(".v-floor");
+  const lys = $$("#vobj .v-ly"), front = lys[lys.length - 1], back = lys[0];
+  const HOME = { ry: -28, rx: 10 };
+  let ry = HOME.ry, rx = HOME.rx, vy = 0, zoom = 1, tz = 1, idleAt = 0, pinch = null, drag = null;
+  const pts = new Map();
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const fit = () => obj.style.setProperty("--gap", `${(obj.clientWidth * 0.032) / (LAYERS - 1)}px`);  // kalınlık ≈ genişliğin %3'ü
+  viewer.ro?.disconnect(); viewer.ro = new ResizeObserver(fit); viewer.ro.observe(obj);
+  st.onpointerdown = (e) => {
+    if (viewer.playing || e.target.closest("button")) return;
+    st.setPointerCapture(e.pointerId);
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    md.classList.add("grab");
+    if (pts.size === 2) {
+      const [p, q] = [...pts.values()];
+      pinch = { d: Math.hypot(p.x - q.x, p.y - q.y), z: tz }; drag = null;
+    } else drag = { x: e.clientX, y: e.clientY, t: e.timeStamp };
+    vy = 0;
   };
-  st.onpointerup = st.onpointercancel = () => { drag = null; setTimeout(() => { if (!drag) idle = true; }, 1600); };
+  st.onpointermove = (e) => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch && pts.size === 2) {
+      const [p, q] = [...pts.values()];
+      tz = clamp(pinch.z * Math.hypot(p.x - q.x, p.y - q.y) / pinch.d, 0.8, 2.6);
+    } else if (drag) {
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y, dt = Math.max(e.timeStamp - drag.t, 1);
+      ry += dx * 0.5; rx = clamp(rx - dy * 0.3, -40, 40);
+      vy = vy * 0.5 + (dx * 0.5 / dt) * 16 * 0.5;  // kare başına derece; son hareketlere ağırlık ver
+      drag = { x: e.clientX, y: e.clientY, t: e.timeStamp };
+    }
+  };
+  st.onpointerup = st.onpointercancel = (e) => {
+    pts.delete(e.pointerId);
+    if (pts.size < 2) pinch = null;
+    if (!pts.size) { drag = null; md.classList.remove("grab"); idleAt = performance.now(); }
+    else { const [p] = pts.values(); drag = { x: p.x, y: p.y, t: e.timeStamp }; }
+  };
+  st.onwheel = (e) => { if (viewer.playing) return; e.preventDefault(); tz = clamp(tz * Math.exp(-e.deltaY * 0.0015), 0.8, 2.6); idleAt = performance.now(); };
+  st.ondblclick = () => { if (viewer.playing) return; tz = 1; rx = HOME.rx; ry = HOME.ry + Math.round((ry - HOME.ry) / 360) * 360; vy = 0; };
   const frame = (now) => {
     viewer.raf = requestAnimationFrame(frame);
-    const t = now / 1000;
-    if (idle && !reduced) { ty += (Math.sin(t * 0.5) * 24 - ty) * 0.02; tx += (Math.cos(t * 0.4) * 6 - tx) * 0.02; }
-    ry += (ty - ry) * 0.12; rx += (tx - rx) * 0.12;
-    md.style.transform = `rotateY(${ry}deg) rotateX(${rx}deg) translateY(${reduced ? 0 : Math.sin(t * 1.1) * 8}px)`;
+    if (!pts.size) {
+      ry += vy; vy *= 0.94;
+      if (!reduced && now - idleAt > 2600 && Math.abs(vy) < 0.05) { ry += 0.22; rx += (HOME.rx - rx) * 0.02; }
+    }
+    zoom += (tz - zoom) * 0.15;
+    const t = now / 1000, a = ry * Math.PI / 180, bob = reduced ? 0 : Math.sin(t * 1.1) * 6;
+    obj.style.transform = `translate3d(0, ${bob}px, 0) scale(${zoom}) rotateX(${rx}deg) rotateY(${ry}deg)`;
+    // ışık soldan önden geliyor: hangi yüz ışığa dönükse o parlıyor, gölge silahın genişliğiyle daralıp genişliyor
+    const lit = (ang) => (0.55 + 0.55 * Math.max(0, Math.cos(ang - 0.45))).toFixed(3);
+    front.style.filter = `brightness(${lit(a)})`; back.style.filter = `brightness(${lit(a + Math.PI)})`;
+    floor.style.transform = `scaleX(${(0.35 + 0.65 * Math.abs(Math.cos(a))) * zoom})`;
   };
   cancelAnimationFrame(viewer.raf);
   viewer.raf = requestAnimationFrame(frame);
@@ -882,6 +943,7 @@ document.addEventListener("click", (e) => {
   else if (t.dataset.vch) viewerPick(null, +t.dataset.vch);
   else if (t.id === "vclose") closeViewer();
   else if (t.id === "vsound") viewerSound();
+  else if (t.id === "vplay") viewerToggleVideo();
   else if (t.dataset.wf || t.dataset.tf || t.dataset.only) {
     const [set, key] = t.dataset.wf ? [filters.weapons, t.dataset.wf] : t.dataset.tf ? [filters.tiers, t.dataset.tf] : [null];
     if (set) set.has(key) ? set.delete(key) : set.add(key); else filters.onlyWish = !filters.onlyWish;

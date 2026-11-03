@@ -19,12 +19,21 @@ def main():
     ap.add_argument("--catalog-only", action="store_true")
     ap.add_argument("--test-notify", action="store_true")
     ap.add_argument("--fixture")
-    ap.add_argument("--force", action="store_true", help="son 6 saatte çekilmiş olsa bile yeniden çek")
+    ap.add_argument("--force", action="store_true", help="bugünün pazarı kayıtlı olsa bile yeniden çek")
     args = ap.parse_args()
 
     if args.test_notify:
         notify.send_text("✅ Valorant pazar botu çalışıyor. Bildirimler bu sohbete gelecek.")
         return 0
+
+    # Yedek zamanlamalar ve oturum açılışı gibi sık tetiklerde Riot'u ve depoyu gereksiz yormamak için:
+    # bu kontrol katalog yenilemeden önce, yoksa her çalışma skins.json'daki zaman damgası yüzünden commit atardı.
+    if not (args.force or args.fixture or args.catalog_only):
+        last = (store.load_history() or [None])[-1]
+        now = dt.datetime.now(dt.timezone.utc)
+        if last and last["date"] == now.date().isoformat():  # pazar 00:00 UTC'de yenilenir: bugünkü zaten kayıtlı
+            print("Bugünün pazarı zaten kayıtlı, atlanıyor (--force ile zorla).")
+            return 0
 
     try:
         cat, added = catalog.refresh()
@@ -37,12 +46,6 @@ def main():
     if args.catalog_only:
         store.notify_new_skins(added)
         return 0
-
-    if not (args.force or args.fixture):  # oturum açılışı gibi sık tetiklerde Riot'u gereksiz yormamak için
-        last = (store.load_history() or [None])[-1]
-        if last and (dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(last["fetched_at"])).total_seconds() < 6 * 3600:
-            print("Pazar son 6 saat içinde zaten çekilmiş, atlanıyor (--force ile zorla).")
-            return 0
 
     vp = None
     try:

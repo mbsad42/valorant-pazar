@@ -3,7 +3,14 @@ name: Günlük pazar
 on:
   schedule:
     - cron: "7 0 * * *"    # 00:07 UTC = 03:07 (Türkiye), pazar 00:00 UTC'de yenilenir
-    - cron: "47 1 * * *"   # yedek: ilki gecikirse/başarısız olursa; zaten kayıtlıysa bildirim atmaz
+    # Yedekler: GitHub zamanlanmış görevleri yoğunlukta saatlerce geciktirip bazen hiç çalıştırmıyor.
+    # Bugünün pazarı kayıtlıysa program Riot'a bağlanmadan saniyeler içinde çıkar, bildirim de atmaz.
+    - cron: "37 0 * * *"
+    - cron: "13 1 * * *"
+    - cron: "47 1 * * *"
+    - cron: "23 2 * * *"
+    - cron: "53 2 * * *"
+    - cron: "29 3 * * *"
   workflow_dispatch:
     inputs:
       mode:
